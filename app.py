@@ -2,7 +2,11 @@ import pandas as pd
 import streamlit as st
 import matplotlib.pyplot as plt
 
-edit_url = 'https://docs.google.com/spreadsheets/d/1B8mYKKLbZdpUODg0IZE_7SaYo_3giOpA0K571GyQdVM/edit?usp=sharing'
+from os import getenv
+from dotenv import load_dotenv
+
+load_dotenv()
+edit_url = getenv("URL")
 export_url = edit_url.replace('/edit?usp=sharing', '/export?format=csv')
 
 @st.cache_data(ttl=180)
