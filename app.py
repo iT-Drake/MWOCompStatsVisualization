@@ -15,49 +15,45 @@ def load_data(url):
 
 df = load_data(export_url)
 
+st.logo('Logo.png')
+
+teams = df['team'].unique()
+
+team = st.sidebar.selectbox('', teams, index=None, placeholder='Select a team')
+if team:
+    team_data = df[df['team'] == team]
+    players = team_data['name'].unique()
+else:
+    players = df['name'].unique()
+
+player = st.sidebar.selectbox('', players, index=None, placeholder='Select a pilot')
+
+st.title('Statistics for competitive matches CS 2024')
+
+col1, col2 = st.columns(2, gap='medium')
+
 top_damage_players = df.groupby('name')['damage'].sum().sort_values(ascending=False).head(5)
-
-fig, ax = plt.subplots()
-fig.patch.set_facecolor('black')
-ax.set_facecolor('black')
-ax.tick_params(axis='both', colors='white')
-ax.grid(True, color='white')
-
-top_damage_players.plot(kind='bar', ax=ax)
-ax.set_xlabel('Pilot', color='white')
-ax.set_ylabel('Total Damage', color='white')
-ax.set_title('Top-5 Players with Highest Damage', color='white')
-
-st.pyplot(fig)
+col1.subheader('Players with highest damage')
+col1.bar_chart(top_damage_players, )
 
 top_kills_players = df.groupby('name')['kills'].sum().sort_values(ascending=False).head(5)
+col2.subheader('Players with most kills')
+col2.bar_chart(top_kills_players)
 
-fig, ax = plt.subplots()
-fig.patch.set_facecolor('black')
-ax.set_facecolor('black')
-ax.tick_params(axis='both', colors='white')
-ax.grid(True, color='white')
-
-top_kills_players.plot(kind='bar', ax=ax)
-ax.set_xlabel('Pilot', color='white')
-ax.set_ylabel('Total Kills', color='white')
-ax.set_title('Top-5 Players with Most Kills', color='white')
-
-st.pyplot(fig)
-
-player = st.selectbox('Select a player', df['name'].unique())
 if player:
+    col1, col2 = st.columns(2, gap='medium')
+
     player_data = df[df['name'] == player]
     total_matches = player_data.shape[0]
     wins = player_data['winner'].sum()
     win_loss_ratio = wins / total_matches if total_matches > 0 else 0
 
-    st.write(f"### {player}")
-    st.write(f"Games played: {total_matches}")
-    st.write(f"Total Kills: {player_data['kills'].sum()}")
-    st.write(f"Total Damage: {player_data['damage'].sum()}")
-    st.write(f"Win/Loss Ratio: {win_loss_ratio:.2f}")
+    col1.write(f"### {player}")
+    col1.write(f"Games played: {total_matches}")
+    col1.write(f"Total Kills: {player_data['kills'].sum()}")
+    col1.write(f"Total Damage: {player_data['damage'].sum()}")
+    col1.write(f"Win/Loss Ratio: {win_loss_ratio:.2f}")
 
     if player_data.shape[0] > 0:
-        st.write("### Match Details:")
-        st.write(player_data[['team', 'winner', 'mechname', 'health', 'damage', 'kills']])
+        col2.write("### Match Details:")
+        col2.write(player_data[['team', 'winner', 'mechname', 'health', 'damage', 'kills']])
