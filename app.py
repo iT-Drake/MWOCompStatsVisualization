@@ -321,8 +321,8 @@ def team_statistics(df, team):
     losses = team_data[team_data['MatchResult'] == 'LOSS'].shape[0]
     win_loss_ratio = wins / losses
 
-    avg_kills = team_data['Kills'].mean()
-    avg_damage = team_data['Damage'].mean()
+    avg_kills = team_data['Kills'].sum() / games_played
+    avg_damage = team_data['Damage'].sum() / games_played
 
     class_distribution = team_data.groupby('Class')['Class'].value_counts().sort_values(ascending=False).reset_index()
     top_mechs = team_data['Mech'].value_counts().sort_values(ascending=False).head(10).reset_index()
