@@ -214,13 +214,13 @@ def batch_request(match_ids, api_url, db_name):
 def sidebar(df):
     options = {}
 
-    teams = df['TeamName'].unique()
+    teams = df['TeamName'].drop_duplicates().sort_values(ascending=True)
     team = st.sidebar.selectbox('Select a team', teams, index=None, placeholder='Select a team', label_visibility='hidden')
     if team:
         team_data = df[df['TeamName'] == team]
-        players = team_data['Username'].unique()
+        players = team_data['Username'].drop_duplicates().sort_values(ascending=True)
     else:
-        players = df['Username'].unique()
+        players = df['Username'].drop_duplicates().sort_values(ascending=True)
 
     player = st.sidebar.selectbox('Select a pilot', players, index=None, placeholder='Select a pilot', label_visibility='hidden')
 
@@ -391,6 +391,7 @@ def player_statistics(df, player):
 
     st.divider()
 
+    st.subheader('Most used mechs:')
     st.dataframe(mech_stats, hide_index=True, use_container_width=True)
 
 def map_statistics(df, map_name):
