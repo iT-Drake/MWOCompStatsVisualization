@@ -44,8 +44,8 @@ def mech_data(url):
 def team_rosters(url):
     try:
         df = pd.read_csv(url, index_col=0)
-        zipped_data = zip(df['Pilot'], df['Team'])
-        result = {item[0].upper(): item[1] for item in zipped_data}
+        zipped_data = zip(df['Pilot'].str.upper(), df['Team'])
+        result = {item[0]: item[1] for item in zipped_data}
     except Exception as e:
         write_error(f"An error occurred while fetching team rosters:\n{e}")
         result = {}
