@@ -310,9 +310,9 @@ def team_statistics(df, team):
         return
     
     games_played = team_data['MatchID'].nunique()
-    total_lines = team_data.shape[0]
     wins = team_data[team_data['MatchResult'] == 'WIN'].shape[0]
-    win_loss_ratio = wins / total_lines
+    losses = team_data[team_data['MatchResult'] == 'LOSS'].shape[0]
+    win_loss_ratio = wins / losses
 
     avg_kills = team_data['Kills'].mean()
     avg_damage = team_data['Damage'].mean()
@@ -348,7 +348,8 @@ def player_statistics(df, player):
     
     total_games = player_data.shape[0]
     wins = player_data[player_data['MatchResult'] == 'WIN'].shape[0]
-    win_loss_ratio = wins / total_games
+    losses = player_data[player_data['MatchResult'] == 'LOSS'].shape[0]
+    win_loss_ratio = wins / losses
 
     kills = player_data['Kills'].sum()
     kmdds = player_data['KillsMostDamage'].sum()
