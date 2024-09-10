@@ -361,7 +361,7 @@ def player_statistics(df, player):
     top_mechs = player_data['Mech'].value_counts().sort_values(ascending=False).head(3).reset_index()
     avg_damage_per_mech = player_data.groupby('Mech')['Damage'].mean()
     win_loss_per_mech = player_data.groupby('Mech')['MatchResult'].apply(lambda x: x.value_counts().get('WIN', 0) / x.value_counts().get('LOSS', 1))
-    kills_to_deaths_per_mech = player_data.groupby('Mech').apply(lambda x: (x['Kills'].sum() / x['HealthPercentage'].eq(0).sum()) if x['HealthPercentage'].eq(0).sum() > 0 else x['Kills'].sum())
+    kills_to_deaths_per_mech = player_data.groupby('Mech')['Mech'].apply(lambda x: (x['Kills'].sum() / x['HealthPercentage'].eq(0).sum()) if x['HealthPercentage'].eq(0).sum() > 0 else x['Kills'].sum())
 
     mech_stats = top_mechs.copy().rename(columns={'count': 'Uses'})
     mech_stats['Avg Dmg'] = mech_stats['Mech'].map(avg_damage_per_mech)
