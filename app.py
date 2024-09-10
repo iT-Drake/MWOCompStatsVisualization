@@ -309,9 +309,10 @@ def team_statistics(df, team):
         write_error(f'Data not found for team: {team}')
         return
     
-    total_games = team_data.shape[0]
+    games_played = team_data['MatchID'].nunique()
+    total_lines = team_data.shape[0]
     wins = team_data[team_data['MatchResult'] == 'WIN'].shape[0]
-    win_loss_ratio = wins / total_games
+    win_loss_ratio = wins / total_lines
 
     avg_kills = team_data['Kills'].mean()
     avg_damage = team_data['Damage'].mean()
@@ -320,7 +321,7 @@ def team_statistics(df, team):
     top_mechs = team_data['Mech'].value_counts().sort_values(ascending=False).head(10).reset_index()
     
     st.subheader(f'Team: {team}')
-    st.subheader(f'Games played: {total_games}')
+    st.subheader(f'Games played: {games_played}')
     st.subheader(f'Win/Loss ratio: {win_loss_ratio:.2f}')
     st.subheader(f'Avg. kills per drop: {avg_kills:.2f}')
     st.subheader(f'Avg. damage per drop: {avg_damage:.2f}')
