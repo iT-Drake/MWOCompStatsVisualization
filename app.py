@@ -44,7 +44,8 @@ def mech_data(url):
 def team_rosters(url):
     try:
         df = pd.read_csv(url, index_col=0)
-        result = {item[0]: item[1] for item in zip(df['Pilot'], df['Team'])}
+        zipped_data = zip(df['Pilot'], df['Team'])
+        result = {item[0].upper(): item[1] for item in zipped_data}
     except Exception as e:
         write_error(f"An error occurred while fetching team rosters:\n{e}")
         result = {}
@@ -123,12 +124,13 @@ def match_data(id, match_details, user_details):
 
         mech_id = line['MechItemID']
         pilot = line['Username']
+        pilot_upper_case = pilot.upper()
         if mech_id not in mechs:
             raise Exception(f'Mech with id={mech_id} not found')
-        if pilot not in rosters:
+        if pilot_upper_case not in rosters:
             raise Exception(f'Pilot {pilot} not found in the rosters')
         mech = mechs[mech_id]
-        team = rosters[pilot]
+        team = rosters[pilot_upper_case]
 
         new_line = {}
         new_line['MatchID'] = id
@@ -162,6 +164,8 @@ def match_data(id, match_details, user_details):
     return lines
 
 def request_match_data(match_id, api_url):
+    df = None
+
     url = api_url.replace('%1', match_id)
     response = requests.get(url)
     if response.status_code == 200:
@@ -178,7 +182,9 @@ def request_match_data(match_id, api_url):
             write_error(f"Error fetching id={match_id}:\n{e}")
     else:
         write_error(f"Error fetching id={match_id}:\nCode={response.status_code},Text={response.text}")
-        df = pd.DataFrame(match_data_columns())
+    
+    if df is None:
+        df = pd.DataFrame([], columns=match_data_columns())
 
     return df
 
@@ -193,7 +199,8 @@ def batch_request(match_ids, api_url, db_name):
             continue
 
         df = request_match_data(match_id, api_url)
-        df.to_sql('CompData', conn, if_exists='append', index=False)
+        if df.shape[0] > 0:
+            df.to_sql('CompData', conn, if_exists='append', index=False)
 
         # API calls limited by 60 per minute
         sleep(1)
