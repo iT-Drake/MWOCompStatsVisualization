@@ -24,6 +24,26 @@ def convert_to_int(value):
         write_error(f'Incorrect match id: {value}')
         return ''
 
+def bar_chart(df, title, x_axis, y_axis, style='main'):
+    if style == 'alternate':
+        return bar_chart_alternate(df, title, x_axis, y_axis)
+    else:
+        return bar_chart_main(df, title, x_axis, y_axis)
+
+def bar_chart_main(df, title, x_axis, y_axis):
+    return alt.Chart(df, title=title).mark_bar().encode(
+        x=alt.X(x_axis, sort=None, axis=alt.Axis(labelAngle=0), title=None),
+        y=alt.Y(y_axis, title=None))
+
+def bar_chart_alternate(df, title, x_axis, y_axis):
+    return alt.Chart(df, title=title).mark_bar().encode(
+        x=alt.X(x_axis, sort=None, axis=alt.Axis(labelAngle=0), title=None),
+        y=alt.Y(y_axis, title=None)
+    ).configure_bar(
+        color='yellowgreen',
+        opacity=0.8
+    )
+
 ##-------------------------------------------------------------------------------------------
 ## DATA SOURCES
 ##-------------------------------------------------------------------------------------------
@@ -256,59 +276,64 @@ def general_statistics(df):
     team_damage = df['TeamDamage'].sum()
 
     top_mechs = df['Mech'].value_counts().sort_values(ascending=False).head(10).reset_index()
+    top_chassis = df['Chassis'].value_counts().sort_values(ascending=False).head(10).reset_index()
 
     light_mechs_data = df[df['Class'] == 'LIGHT']
     top_light_mechs = light_mechs_data['Mech'].value_counts().sort_values(ascending=False).head(5).reset_index()
+    top_light_chassis = light_mechs_data['Chassis'].value_counts().sort_values(ascending=False).head(5).reset_index()
 
     medium_mechs_data = df[df['Class'] == 'MEDIUM']
     top_medium_mechs = medium_mechs_data['Mech'].value_counts().sort_values(ascending=False).head(5).reset_index()
+    top_medium_chassis = medium_mechs_data['Chassis'].value_counts().sort_values(ascending=False).head(5).reset_index()
 
     heavy_mechs_data = df[df['Class'] == 'HEAVY']
     top_heavy_mechs = heavy_mechs_data['Mech'].value_counts().sort_values(ascending=False).head(5).reset_index()
+    top_heavy_chassis = heavy_mechs_data['Chassis'].value_counts().sort_values(ascending=False).head(5).reset_index()
 
     assault_mechs_data = df[df['Class'] == 'ASSAULT']
     top_assault_mechs = assault_mechs_data['Mech'].value_counts().sort_values(ascending=False).head(5).reset_index()
+    top_assault_chassis = assault_mechs_data['Chassis'].value_counts().sort_values(ascending=False).head(5).reset_index()
+
+    col1, col2, col3, col4, col5 = st.columns([1, 1, 1, 1, 1])
+    col1.metric(label='Teams', value=teams_number)
+    col2.metric(label='Games played', value=games_played)
+    col3.metric(label='Mechs killed', value=mechs_killed)
+    col4.metric(label='Components destroyed', value=components_destroyed)
+    col5.metric(label='Team damage dealt', value=team_damage)
 
     left_column, right_column = st.columns(2, gap='medium')
 
     # left_column
-    left_column.subheader(f'Teams number: {teams_number}')
-    left_column.subheader(f'Games played: {games_played}')
-    left_column.subheader(f'Mechs killed: {mechs_killed}')
-    left_column.subheader(f'Components destroyed: {components_destroyed}')
-    left_column.subheader(f'Team damage dealt: {team_damage}')
+    left_column.altair_chart(
+        bar_chart(top_mechs, 'Most used mechs', 'Mech', 'count'), use_container_width=True)
+
+    left_column.altair_chart(
+        bar_chart(top_light_mechs, 'Most used light mechs', 'Mech', 'count'), use_container_width=True)
+
+    left_column.altair_chart(
+        bar_chart(top_medium_mechs, 'Most used medium mechs', 'Mech', 'count'), use_container_width=True)
+
+    left_column.altair_chart(
+        bar_chart(top_heavy_mechs, 'Most used heavy mechs', 'Mech', 'count'), use_container_width=True)
+    
+    left_column.altair_chart(
+        bar_chart(top_assault_mechs, 'Most used assault mechs', 'Mech', 'count'), use_container_width=True)
 
     # right_column
-    right_column.altair_chart(alt.Chart(top_mechs, title='Most used mechs').mark_bar().encode(
-        x=alt.X('Mech', sort=None, axis=alt.Axis(labelAngle=-45)),
-        y=alt.Y('count', title='Uses')
-    ), use_container_width=True)
+    right_column.altair_chart(
+        bar_chart(top_chassis, 'Most used chassis', 'Chassis', 'count', style='alternate'), use_container_width=True)
 
-    st.divider()
+    right_column.altair_chart(
+        bar_chart(top_light_chassis, 'Most used light chassis', 'Chassis', 'count', style='alternate'), use_container_width=True)
 
-    left_column, right_column = st.columns(2, gap='medium')
+    right_column.altair_chart(
+        bar_chart(top_medium_chassis, 'Most used medium chassis', 'Chassis', 'count', style='alternate'), use_container_width=True)
 
-    # left_column
-    left_column.altair_chart(alt.Chart(top_light_mechs, title='Most used light mechs').mark_bar().encode(
-        x=alt.X('Mech', sort=None, axis=alt.Axis(labelAngle=-45)),
-        y=alt.Y('count', title='Uses')
-    ), use_container_width=True)
-
-    left_column.altair_chart(alt.Chart(top_heavy_mechs, title='Most used heavy mechs').mark_bar().encode(
-        x=alt.X('Mech', sort=None, axis=alt.Axis(labelAngle=-45)),
-        y=alt.Y('count', title='Uses')
-    ), use_container_width=True)
-
-    # right_column
-    right_column.altair_chart(alt.Chart(top_medium_mechs, title='Most used medium mechs').mark_bar().encode(
-        x=alt.X('Mech', sort=None, axis=alt.Axis(labelAngle=-45)),
-        y=alt.Y('count', title='Uses')
-    ), use_container_width=True)
-
-    right_column.altair_chart(alt.Chart(top_assault_mechs, title='Most used assault mechs').mark_bar().encode(
-        x=alt.X('Mech', sort=None, axis=alt.Axis(labelAngle=-45)),
-        y=alt.Y('count', title='Uses')
-    ), use_container_width=True)
+    right_column.altair_chart(
+        bar_chart(top_heavy_chassis, 'Most used heavy chassis', 'Chassis', 'count', style='alternate'), use_container_width=True)
+    
+    right_column.altair_chart(
+        bar_chart(top_assault_chassis, 'Most used assault chassis', 'Chassis', 'count', style='alternate'), use_container_width=True)
 
 def team_statistics(df, team):
     team_data = df[df['TeamName'] == team]
@@ -341,23 +366,14 @@ def team_statistics(df, team):
 
     left_column, right_column = st.columns(2, gap='medium')
 
-    left_column.altair_chart(alt.Chart(top_mechs, title='Most used mechs').mark_bar().encode(
-        x=alt.X('Mech', sort=None, axis=alt.Axis(labelAngle=0), title=None),
-        y=alt.Y('count', title='Uses')
-    ), use_container_width=True)
-
-    left_column.altair_chart(alt.Chart(class_distribution, title='Weight class distribution').mark_bar().encode(
-        x=alt.X('Class', sort=None, title=None),
-        y=alt.Y('count', title='Uses')
-    ), use_container_width=True)
-
-    right_column.altair_chart(alt.Chart(top_chassis, title='Most used chassis').mark_bar().encode(
-        x=alt.X('Chassis', sort=None, axis=alt.Axis(labelAngle=0), title=None),
-        y=alt.Y('count', title='Uses')
-    ).configure_bar(
-        color='yellowgreen',
-        opacity=0.8
-    ), use_container_width=True)
+    left_column.altair_chart(
+        bar_chart(top_mechs, 'Most used mechs', 'Mech', 'count'), use_container_width=True)
+    
+    left_column.altair_chart(
+        bar_chart(class_distribution, 'Weight class distribution', 'Class', 'count'), use_container_width=True)
+    
+    right_column.altair_chart(
+        bar_chart(top_chassis, 'Most used chassis', 'Chassis', 'count', style='alternate'), use_container_width=True)
 
 def player_statistics(df, player):
     player_data = df[df['Username'] == player]
