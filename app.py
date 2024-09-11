@@ -324,27 +324,39 @@ def team_statistics(df, team):
     avg_kills = team_data['Kills'].sum() / games_played
     avg_damage = team_data['Damage'].sum() / games_played
 
-    class_distribution = team_data.groupby('Class')['Class'].value_counts().sort_values(ascending=False).reset_index()
+    weight_class_order = ['LIGHT', 'MEDIUM', 'HEAVY', 'ASSAULT']
+    class_distribution = team_data.groupby('Class')['Class'].value_counts().sort_values(ascending=False).reindex(weight_class_order).reset_index()
     top_mechs = team_data['Mech'].value_counts().sort_values(ascending=False).head(10).reset_index()
+    top_chassis = team_data['Chassis'].value_counts().sort_values(ascending=False).head(10).reset_index()
     
     st.subheader(f'Team: {team}')
-    st.subheader(f'Games played: {games_played}')
-    st.subheader(f'Win/Loss ratio: {win_loss_ratio:.2f}')
-    st.subheader(f'Avg. kills per drop: {avg_kills:.2f}')
-    st.subheader(f'Avg. damage per drop: {avg_damage:.2f}')
+
+    col1, col2, col3, col4 = st.columns([1, 1, 1, 1])
+    col1.metric(label='Games played', value=games_played)
+    col2.metric(label='Win/Loss ratio', value=f'{win_loss_ratio:.2f}')
+    col3.metric(label='Avg. kills (per drop)', value=f'{avg_kills:.2f}')
+    col4.metric(label='Avg. damage (per drop)', value=f'{avg_damage:.2f}')
 
     st.divider()
 
     left_column, right_column = st.columns(2, gap='medium')
 
-    left_column.altair_chart(alt.Chart(class_distribution, title='Weight class distribution').mark_bar().encode(
-        x=alt.X('Class', sort=None),
+    left_column.altair_chart(alt.Chart(top_mechs, title='Most used mechs').mark_bar().encode(
+        x=alt.X('Mech', sort=None, axis=alt.Axis(labelAngle=0), title=None),
         y=alt.Y('count', title='Uses')
     ), use_container_width=True)
 
-    right_column.altair_chart(alt.Chart(top_mechs, title='Most used mechs').mark_bar().encode(
-        x=alt.X('Mech', sort=None, axis=alt.Axis(labelAngle=-45)),
+    left_column.altair_chart(alt.Chart(class_distribution, title='Weight class distribution').mark_bar().encode(
+        x=alt.X('Class', sort=None, title=None),
         y=alt.Y('count', title='Uses')
+    ), use_container_width=True)
+
+    right_column.altair_chart(alt.Chart(top_chassis, title='Most used chassis').mark_bar().encode(
+        x=alt.X('Chassis', sort=None, axis=alt.Axis(labelAngle=0), title=None),
+        y=alt.Y('count', title='Uses')
+    ).configure_bar(
+        color='yellowgreen',
+        opacity=0.8
     ), use_container_width=True)
 
 def player_statistics(df, player):
