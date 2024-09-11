@@ -359,8 +359,8 @@ def team_statistics(df, team):
     col1, col2, col3, col4 = st.columns([1, 1, 1, 1])
     col1.metric(label='Games played', value=games_played)
     col2.metric(label='Win/Loss ratio', value=f'{win_loss_ratio:.2f}')
-    col3.metric(label='Avg. kills (per drop)', value=f'{avg_kills:.2f}')
-    col4.metric(label='Avg. damage (per drop)', value=f'{avg_damage:.2f}')
+    col3.metric(label='Avg kills (per drop)', value=f'{avg_kills:.2f}')
+    col4.metric(label='Avg damage (per drop)', value=f'{avg_damage:.2f}')
 
     st.divider()
 
@@ -405,19 +405,20 @@ def player_statistics(df, player):
     mech_stats['W/L'] = mech_stats['Mech'].map(win_loss_per_mech)
     mech_stats['K/D'] = mech_stats['Mech'].map(kills_to_deaths_per_mech)
 
-    left_column, right_column = st.columns(2, gap='medium')
+    st.subheader(f'Player: {player}')
 
-    left_column.subheader(f'Player: {player}')
-    left_column.subheader(f'Games played: {total_games}')
-    left_column.subheader(f'Win/Loss ratio: {win_loss_ratio:.2f}')
-    left_column.subheader(f'Kills/Deaths ratio: {kills_deaths_ratio:.2f}')
-    
-    right_column.subheader(f'Kills: {kills}')
-    right_column.subheader(f'KMDDs: {kmdds}')
-    right_column.subheader(f'Assists: {assists}')
-    right_column.subheader(f'Damage (avg./total): {avg_damage:.2f} / {total_damage}')
+    col1, col2, col3, col4 = st.columns([1, 1, 1, 1])
+    col1.metric(label='Games played', value=total_games)
+    col1.metric(label='Win/Loss ratio', value=f'{win_loss_ratio:.2f}')
 
-    st.divider()
+    col2.metric(label='Kills', value=kills)
+    col2.metric(label='Kills/Deaths ratio', value=f'{kills_deaths_ratio:.2f}')
+
+    col3.metric(label='KMDDs', value=kmdds)
+    col3.metric(label='Assists', value=assists)
+
+    col4.metric(label='Avg damage (per drop)', value=f'{avg_damage:.2f}')
+    col4.metric(label='Total damage', value=total_damage)
 
     st.subheader('Most used mechs:')
     st.dataframe(mech_stats, hide_index=True, use_container_width=True)
