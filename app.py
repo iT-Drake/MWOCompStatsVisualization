@@ -24,6 +24,13 @@ def convert_to_int(value):
         write_error(f'Incorrect match id: {value}')
         return ''
 
+def safe_division(dividend, divisor):
+    return dividend / divisor if divisor != 0 else dividend
+
+##-------------------------------------------------------------------------------------------
+## CHARTS
+##-------------------------------------------------------------------------------------------
+
 def bar_chart(df, title, x_axis, y_axis, style='main'):
     if style == 'alternate':
         return bar_chart_alternate(df, title, x_axis, y_axis)
@@ -375,10 +382,15 @@ def team_statistics(df, team, map):
     games_played = team_data['MatchID'].nunique()
     wins = team_data[team_data['MatchResult'] == 'WIN'].shape[0]
     losses = team_data[team_data['MatchResult'] == 'LOSS'].shape[0]
-    win_loss_ratio = wins / losses if losses > 0 else wins
+    win_loss_ratio = safe_division(wins, losses)
 
-    avg_kills = team_data['Kills'].sum() / games_played
-    avg_damage = team_data['Damage'].sum() / games_played
+    t1_games = team_data[team_data['Team'] == '1']
+    t1_wins = safe_division(t1_games[t1_games['MatchResult'] == 'WIN'].shape[0], t1_games.shape[0])
+    t2_games = team_data[team_data['Team'] == '2']
+    t2_wins = safe_division(t2_games[t2_games['MatchResult'] == 'WIN'].shape[0], t2_games.shape[0])
+
+    avg_kills = safe_division(team_data['Kills'].sum(), games_played)
+    avg_damage = safe_division(team_data['Damage'].sum(), games_played)
 
     weight_class_order = ['LIGHT', 'MEDIUM', 'HEAVY', 'ASSAULT']
     class_distribution = team_data.groupby('Class')['Class'].value_counts().sort_values(ascending=False).reindex(weight_class_order).reset_index()
@@ -392,11 +404,13 @@ def team_statistics(df, team, map):
     else:
         st.subheader(f'Team: {team}')
 
-    col1, col2, col3, col4 = st.columns([1, 1, 1, 1])
+    col1, col2, col3, col4, col5, col6 = st.columns([1, 1, 1, 1, 1, 1])
     col1.metric(label='Games played', value=games_played)
     col2.metric(label='Win/Loss ratio', value=f'{win_loss_ratio:.2f}')
-    col3.metric(label='Avg kills (per drop)', value=f'{avg_kills:.2f}')
-    col4.metric(label='Avg damage (per drop)', value=f'{avg_damage:.2f}')
+    col3.metric(label='Team 1 Wins', value=f'{100 * t1_wins:.0f} %')
+    col4.metric(label='Team 2 Wins', value=f'{100 * t2_wins:.0f} %')
+    col5.metric(label='Avg kills (per drop)', value=f'{avg_kills:.2f}')
+    col6.metric(label='Avg damage (per drop)', value=f'{avg_damage:.2f}')
 
     st.divider()
 
@@ -424,21 +438,21 @@ def player_statistics(df, player, map):
     total_games = player_data.shape[0]
     wins = player_data[player_data['MatchResult'] == 'WIN'].shape[0]
     losses = player_data[player_data['MatchResult'] == 'LOSS'].shape[0]
-    win_loss_ratio = wins / losses if losses > 0 else wins
+    win_loss_ratio = safe_division(wins, losses)
 
     kills = player_data['Kills'].sum()
     kmdds = player_data['KillsMostDamage'].sum()
     assists = player_data['Assists'].sum()
     deaths = player_data[player_data['HealthPercentage'] == 0].shape[0]
-    kills_deaths_ratio = kills / deaths if deaths > 0 else kills
+    kills_deaths_ratio = safe_division(kills, deaths)
 
     avg_damage = player_data['Damage'].mean()
     total_damage = player_data['Damage'].sum()
 
     top_mechs = player_data['Mech'].value_counts().sort_values(ascending=False).head(3).reset_index()
     avg_damage_per_mech = player_data.groupby('Mech')['Damage'].mean()
-    win_loss_per_mech = player_data.groupby('Mech')['MatchResult'].apply(lambda x: (x.value_counts().get('WIN', 0) / x.value_counts().get('LOSS', 1)) if x.value_counts().get('LOSS', 1) > 0 else x.value_counts().get('WIN', 0))
-    kills_to_deaths_per_mech = player_data.groupby('Mech')[['Mech', 'Kills', 'HealthPercentage']].apply(lambda x: (x['Kills'].sum() / x['HealthPercentage'].eq(0).sum()) if x['HealthPercentage'].eq(0).sum() > 0 else x['Kills'].sum())
+    win_loss_per_mech = player_data.groupby('Mech')['MatchResult'].apply(lambda x: safe_division(x.value_counts().get('WIN', 0), x.value_counts().get('LOSS', 1)))
+    kills_to_deaths_per_mech = player_data.groupby('Mech')[['Mech', 'Kills', 'HealthPercentage']].apply(lambda x: safe_division(x['Kills'].sum(), x['HealthPercentage'].eq(0).sum()))
 
     mech_stats = top_mechs.copy().rename(columns={'count': 'Uses'})
     mech_stats['Avg Dmg'] = mech_stats['Mech'].map(avg_damage_per_mech)
@@ -478,9 +492,9 @@ def map_statistics(df, map):
     # Badges
     games_played = map_data['MatchID'].nunique()
     t1_games = map_data[map_data['Team'] == '1']
-    t1_wins = t1_games[t1_games['MatchResult'] == 'WIN'].shape[0] / t1_games.shape[0]
+    t1_wins = safe_division(t1_games[t1_games['MatchResult'] == 'WIN'].shape[0], t1_games.shape[0])
     t2_games = map_data[map_data['Team'] == '2']
-    t2_wins = t2_games[t2_games['MatchResult'] == 'WIN'].shape[0] / t2_games.shape[0]
+    t2_wins = safe_division(t2_games[t2_games['MatchResult'] == 'WIN'].shape[0], t2_games.shape[0])
 
     # Average tonnage T1
     lance_map = {'1': 'Alpha', '2': 'Bravo', '3': 'Charlie'}
@@ -509,18 +523,18 @@ def map_statistics(df, map):
 
     col1, col2, col3 = st.columns([1, 1, 1])
     col1.metric(label='Games played', value=games_played)
-    col2.metric(label='Team 1 Wins (%)', value=f'{100 * t1_wins:.0f}')
-    col3.metric(label='Team 2 Wins (%)', value=f'{100 * t2_wins:.0f}')
+    col2.metric(label='Team 1 Wins', value=f'{100 * t1_wins:.0f} %')
+    col3.metric(label='Team 2 Wins', value=f'{100 * t2_wins:.0f} %')
 
     st.divider()
 
     col1, col2 = st.columns([1, 1])
 
     col1.altair_chart(
-        bar_chart(avg_tonnage_t1, 'T1 Average tonnage per lance', 'Lance', 'Tonnage:Q'), use_container_width=True)
+        bar_chart(avg_tonnage_t1, 'Average lance tonnage (Team 1)', 'Lance', 'Tonnage:Q'), use_container_width=True)
 
     col2.altair_chart(
-        bar_chart(avg_tonnage_t2, 'T2 Average tonnage per lance', 'Lance', 'Tonnage:Q', style='team2'), use_container_width=True)
+        bar_chart(avg_tonnage_t2, 'Average lance tonnage (Team 2)', 'Lance', 'Tonnage:Q', style='team2'), use_container_width=True)
 
     col1.altair_chart(
         stacked_bar_chart(mech_team_counts, 'Top mech picks', 'Mech', 'count', 'Team'), use_container_width=True)
