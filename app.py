@@ -27,6 +27,8 @@ def convert_to_int(value):
 def bar_chart(df, title, x_axis, y_axis, style='main'):
     if style == 'alternate':
         return bar_chart_alternate(df, title, x_axis, y_axis)
+    elif style == 'team2':
+        return bar_chart_team2(df, title, x_axis, y_axis)
     else:
         return bar_chart_main(df, title, x_axis, y_axis)
 
@@ -42,6 +44,22 @@ def bar_chart_alternate(df, title, x_axis, y_axis):
     ).configure_bar(
         color='yellowgreen',
         opacity=0.8
+    )
+
+def bar_chart_team2(df, title, x_axis, y_axis):
+    return alt.Chart(df, title=title).mark_bar().encode(
+        x=alt.X(x_axis, sort=None, axis=alt.Axis(labelAngle=0), title=None),
+        y=alt.Y(y_axis, title=None)
+    ).configure_bar(
+        color='orangered',
+        opacity=0.8
+    )
+
+def stacked_bar_chart(df, title, x_axis, y_axis, color):
+    return alt.Chart(df, title=title).mark_bar().encode(
+        x=alt.X(f'{x_axis}:N', sort=alt.EncodingSortField(field=y_axis, op='sum', order='descending'), axis=alt.Axis(labelAngle=0), title=None),
+        y=alt.Y(f'{y_axis}:Q', title=None),
+        color=alt.Color(f'{color}:N', legend=alt.Legend(title=color))
     )
 
 ##-------------------------------------------------------------------------------------------
@@ -244,8 +262,8 @@ def sidebar(df):
 
     player = st.sidebar.selectbox('Select a pilot', players, index=None, placeholder='Select a pilot', label_visibility='hidden')
 
-    # maps = df['Map'].unique()
-    # map = st.sidebar.selectbox('Select a map', maps, index=None, placeholder='Select a map', label_visibility='hidden')
+    maps = df['Map'].unique()
+    map = st.sidebar.selectbox('Select a map', maps, index=None, placeholder='Select a map', label_visibility='hidden')
 
     form = st.sidebar.form("data_fetching", clear_on_submit=True)
     text_area = form.text_area('Get API data for provided IDs:', placeholder='List of Match IDs', key='match_ids')
@@ -264,7 +282,7 @@ def sidebar(df):
     options['team'] = team
     options['player'] = player
     options['match_ids'] = match_ids
-    # options['map'] = map
+    options['map'] = map
 
     return options
 
@@ -335,8 +353,12 @@ def general_statistics(df):
     right_column.altair_chart(
         bar_chart(top_assault_chassis, 'Most used assault chassis', 'Chassis', 'count', style='alternate'), use_container_width=True)
 
-def team_statistics(df, team):
-    team_data = df[df['TeamName'] == team]
+def team_statistics(df, team, map):
+    if map:
+        team_data = df[(df['TeamName'] == team) & (df['Map'] == map)]
+    else:
+        team_data = df[df['TeamName'] == team]
+
     if team_data.shape[0] == 0:
         write_error(f'Data not found for team: {team}')
         return
@@ -354,7 +376,12 @@ def team_statistics(df, team):
     top_mechs = team_data['Mech'].value_counts().sort_values(ascending=False).head(10).reset_index()
     top_chassis = team_data['Chassis'].value_counts().sort_values(ascending=False).head(10).reset_index()
     
-    st.subheader(f'Team: {team}')
+    if map:
+        col1, col2 = st.columns([1, 1])
+        col1.subheader(f'Team: {team}')
+        col2.subheader(f'Map: {map}')
+    else:
+        st.subheader(f'Team: {team}')
 
     col1, col2, col3, col4 = st.columns([1, 1, 1, 1])
     col1.metric(label='Games played', value=games_played)
@@ -375,8 +402,12 @@ def team_statistics(df, team):
     right_column.altair_chart(
         bar_chart(top_chassis, 'Most used chassis', 'Chassis', 'count', style='alternate'), use_container_width=True)
 
-def player_statistics(df, player):
-    player_data = df[df['Username'] == player]
+def player_statistics(df, player, map):
+    if map:
+        player_data = df[(df['Username'] == player) & (df['Map'] == map)]
+    else:    
+        player_data = df[df['Username'] == player]
+
     if player_data.shape[0] == 0:
         write_error(f'Data not found for player: {player}')
         return
@@ -405,7 +436,12 @@ def player_statistics(df, player):
     mech_stats['W/L'] = mech_stats['Mech'].map(win_loss_per_mech)
     mech_stats['K/D'] = mech_stats['Mech'].map(kills_to_deaths_per_mech)
 
-    st.subheader(f'Player: {player}')
+    if map:
+        col1, col2 = st.columns([1, 1])
+        col1.subheader(f'Player: {player}')
+        col2.subheader(f'Map: {map}')
+    else:
+        st.subheader(f'Player: {player}')
 
     col1, col2, col3, col4 = st.columns([1, 1, 1, 1])
     col1.metric(label='Games played', value=total_games)
@@ -423,8 +459,71 @@ def player_statistics(df, player):
     st.subheader('Most used mechs:')
     st.dataframe(mech_stats, hide_index=True, use_container_width=True)
 
-def map_statistics(df, map_name):
-    pass
+def map_statistics(df, map):
+    map_data = df[df['Map'] == map]
+
+    if map_data.shape[0] == 0:
+        write_error(f'No data for the map: {map}')
+        return
+    
+    # Badges
+    games_played = map_data['MatchID'].nunique()
+    t1_games = map_data[map_data['Team'] == '1']
+    t1_wins = t1_games[t1_games['MatchResult'] == 'WIN'].shape[0] / t1_games.shape[0]
+    t2_games = map_data[map_data['Team'] == '2']
+    t2_wins = t2_games[t2_games['MatchResult'] == 'WIN'].shape[0] / t2_games.shape[0]
+
+    # Average tonnage T1
+    lance_map = {'1': 'Alpha', '2': 'Bravo', '3': 'Charlie'}
+    total_tonnage_t1 = t1_games.groupby(['MatchID', 'Lance'])['Tonnage'].sum().reset_index()
+    avg_tonnage_t1 = total_tonnage_t1.groupby(['Lance'])['Tonnage'].mean().reset_index()
+    avg_tonnage_t1['Lance'] = avg_tonnage_t1['Lance'].replace(lance_map)
+
+    # Average tonnage T2
+    total_tonnage_t2 = t2_games.groupby(['MatchID', 'Lance'])['Tonnage'].sum().reset_index()
+    avg_tonnage_t2 = total_tonnage_t2.groupby(['Lance'])['Tonnage'].mean().reset_index()
+    avg_tonnage_t2['Lance'] = avg_tonnage_t2['Lance'].replace(lance_map)
+
+    # Top-10 mechs
+    top_10_mechs = map_data['Mech'].value_counts().head(10).index.tolist()
+    filtered_data = map_data[map_data['Mech'].isin(top_10_mechs)]
+
+    teams_map = {'1': 'Team 1', '2': 'Team 2'}
+    filtered_data['Team'] = filtered_data['Team'].replace(teams_map)
+
+    mech_team_counts = filtered_data.groupby(['Mech', 'Team']).size().sort_values(ascending=False).reset_index(name='count')
+
+    # Top-10 chassis
+    top_10_chassis = map_data['Chassis'].value_counts().head(10).index.tolist()
+    filtered_data = map_data[map_data['Chassis'].isin(top_10_chassis)]
+
+    teams_map = {'1': 'Team 1', '2': 'Team 2'}
+    filtered_data['Team'] = filtered_data['Team'].replace(teams_map)
+
+    chassis_team_counts = filtered_data.groupby(['Chassis', 'Team']).size().sort_values(ascending=False).reset_index(name='count')
+
+    st.subheader(f'Map: {map}')
+
+    col1, col2, col3 = st.columns([1, 1, 1])
+    col1.metric(label='Games played', value=games_played)
+    col2.metric(label='Team 1 Wins (%)', value=f'{100 * t1_wins:.0f}')
+    col3.metric(label='Team 2 Wins (%)', value=f'{100 * t2_wins:.0f}')
+
+    st.divider()
+
+    col1, col2 = st.columns([1, 1])
+
+    col1.altair_chart(
+        bar_chart(avg_tonnage_t1, 'T1 Average tonnage per lance', 'Lance', 'Tonnage:Q'), use_container_width=True)
+
+    col2.altair_chart(
+        bar_chart(avg_tonnage_t2, 'T2 Average tonnage per lance', 'Lance', 'Tonnage:Q', style='team2'), use_container_width=True)
+
+    col1.altair_chart(
+        stacked_bar_chart(mech_team_counts, 'Top mech picks', 'Mech', 'count', 'Team'), use_container_width=True)
+    
+    col2.altair_chart(
+        stacked_bar_chart(chassis_team_counts, 'Top chassis picks', 'Chassis', 'count', 'Team'), use_container_width=True)
 
 ##-------------------------------------------------------------------------------------------
 ## INITIALIZATION
@@ -449,9 +548,11 @@ options = sidebar(df)
 if options['match_ids']:
     batch_request(options['match_ids'], API_URL, DB_NAME)
 
-if not options['team'] and not options['player']:
+if not options['team'] and not options['player'] and not options['map']:
     general_statistics(df)
+elif not options['team'] and not options['player']:
+    map_statistics(df, options['map'])
 elif options['player']:
-    player_statistics(df, options['player'])
+    player_statistics(df, options['player'], options['map'])
 elif options['team']:
-    team_statistics(df, options['team'])
+    team_statistics(df, options['team'], options['map'])
