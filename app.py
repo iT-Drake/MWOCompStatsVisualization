@@ -59,7 +59,7 @@ def stacked_bar_chart(df, title, x_axis, y_axis, color):
     return alt.Chart(df, title=title).mark_bar().encode(
         x=alt.X(f'{x_axis}:N', sort=alt.EncodingSortField(field=y_axis, op='sum', order='descending'), axis=alt.Axis(labelAngle=0), title=None),
         y=alt.Y(f'{y_axis}:Q', title=None),
-        color=alt.Color(f'{color}:N', legend=alt.Legend(title=color))
+        color=alt.Color(f'{color}:N', legend=alt.Legend(title=color), scale=alt.Scale(domain=['1', '2'], range=['lightskyblue', 'orangered']))
     )
 
 ##-------------------------------------------------------------------------------------------
@@ -252,17 +252,26 @@ def batch_request(match_ids, api_url, db_name):
 def sidebar(df):
     options = {}
 
+    # Team
     teams = df['TeamName'].drop_duplicates().sort_values(ascending=True)
     team = st.sidebar.selectbox('Select a team', teams, index=None, placeholder='Select a team', label_visibility='hidden')
+    
+    # Player
     if team:
         team_data = df[df['TeamName'] == team]
         players = team_data['Username'].drop_duplicates().sort_values(ascending=True)
     else:
         players = df['Username'].drop_duplicates().sort_values(ascending=True)
-
     player = st.sidebar.selectbox('Select a pilot', players, index=None, placeholder='Select a pilot', label_visibility='hidden')
 
-    maps = df['Map'].unique()
+    # Map
+    if not team and not player:
+        maps = df['Map'].drop_duplicates().sort_values(ascending=True)
+    elif team and not player:
+        maps = team_data['Map'].drop_duplicates().sort_values(ascending=True)
+    else:
+        player_data = df[df['Username'] == player]
+        maps = player_data['Map'].drop_duplicates().sort_values(ascending=True)
     map = st.sidebar.selectbox('Select a map', maps, index=None, placeholder='Select a map', label_visibility='hidden')
 
     form = st.sidebar.form("data_fetching", clear_on_submit=True)
@@ -488,17 +497,11 @@ def map_statistics(df, map):
     top_10_mechs = map_data['Mech'].value_counts().head(10).index.tolist()
     filtered_data = map_data[map_data['Mech'].isin(top_10_mechs)]
 
-    teams_map = {'1': 'Team 1', '2': 'Team 2'}
-    filtered_data['Team'] = filtered_data['Team'].replace(teams_map)
-
     mech_team_counts = filtered_data.groupby(['Mech', 'Team']).size().sort_values(ascending=False).reset_index(name='count')
 
     # Top-10 chassis
     top_10_chassis = map_data['Chassis'].value_counts().head(10).index.tolist()
     filtered_data = map_data[map_data['Chassis'].isin(top_10_chassis)]
-
-    teams_map = {'1': 'Team 1', '2': 'Team 2'}
-    filtered_data['Team'] = filtered_data['Team'].replace(teams_map)
 
     chassis_team_counts = filtered_data.groupby(['Chassis', 'Team']).size().sort_values(ascending=False).reset_index(name='count')
 
