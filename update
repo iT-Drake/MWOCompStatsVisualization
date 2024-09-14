@@ -1,0 +1,3 @@
+git pull
+sudo systemctl stop streamlit.comp.service
+sudo systemctl start streamlit.comp.service
