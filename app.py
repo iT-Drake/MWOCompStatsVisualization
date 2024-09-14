@@ -366,7 +366,7 @@ def team_statistics(df, team, map):
     games_played = team_data['MatchID'].nunique()
     wins = team_data[team_data['MatchResult'] == 'WIN'].shape[0]
     losses = team_data[team_data['MatchResult'] == 'LOSS'].shape[0]
-    win_loss_ratio = wins / losses
+    win_loss_ratio = wins / losses if losses > 0 else wins
 
     avg_kills = team_data['Kills'].sum() / games_played
     avg_damage = team_data['Damage'].sum() / games_played
@@ -415,7 +415,7 @@ def player_statistics(df, player, map):
     total_games = player_data.shape[0]
     wins = player_data[player_data['MatchResult'] == 'WIN'].shape[0]
     losses = player_data[player_data['MatchResult'] == 'LOSS'].shape[0]
-    win_loss_ratio = wins / losses
+    win_loss_ratio = wins / losses if losses > 0 else wins
 
     kills = player_data['Kills'].sum()
     kmdds = player_data['KillsMostDamage'].sum()
@@ -428,7 +428,7 @@ def player_statistics(df, player, map):
 
     top_mechs = player_data['Mech'].value_counts().sort_values(ascending=False).head(3).reset_index()
     avg_damage_per_mech = player_data.groupby('Mech')['Damage'].mean()
-    win_loss_per_mech = player_data.groupby('Mech')['MatchResult'].apply(lambda x: x.value_counts().get('WIN', 0) / x.value_counts().get('LOSS', 1))
+    win_loss_per_mech = player_data.groupby('Mech')['MatchResult'].apply(lambda x: (x.value_counts().get('WIN', 0) / x.value_counts().get('LOSS', 1)) if x.value_counts().get('LOSS', 1) > 0 else x.value_counts().get('WIN', 0))
     kills_to_deaths_per_mech = player_data.groupby('Mech')[['Mech', 'Kills', 'HealthPercentage']].apply(lambda x: (x['Kills'].sum() / x['HealthPercentage'].eq(0).sum()) if x['HealthPercentage'].eq(0).sum() > 0 else x['Kills'].sum())
 
     mech_stats = top_mechs.copy().rename(columns={'count': 'Uses'})
