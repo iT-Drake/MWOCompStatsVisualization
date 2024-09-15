@@ -10,6 +10,29 @@ from os import path, getenv
 from dotenv import load_dotenv
 
 ##-------------------------------------------------------------------------------------------
+## INITIALIZATION
+##-------------------------------------------------------------------------------------------
+
+load_dotenv()
+DB_NAME = getenv("DB_NAME")
+API_KEY = getenv("API_KEY")
+API_URL = getenv("API_URL")
+MECH_DATA_URL = getenv("MECH_DATA_URL")
+ROSTERS_URL = getenv("ROSTERS_URL")
+APP_TITLE = getenv("APP_TITLE")
+API_URL = API_URL.replace('%2', API_KEY)
+
+CHART_LABELS_ANGLE = 0
+
+##-------------------------------------------------------------------------------------------
+## SETTINGS
+##-------------------------------------------------------------------------------------------
+
+def set_chart_labels_angle(draw_horizontally=True):
+    global CHART_LABELS_ANGLE
+    CHART_LABELS_ANGLE = 0 if draw_horizontally else -90
+
+##-------------------------------------------------------------------------------------------
 ## UTILITY METHODS
 ##-------------------------------------------------------------------------------------------
 
@@ -41,12 +64,12 @@ def bar_chart(df, title, x_axis, y_axis, style='main'):
 
 def bar_chart_main(df, title, x_axis, y_axis):
     return alt.Chart(df, title=title).mark_bar().encode(
-        x=alt.X(x_axis, sort=None, axis=alt.Axis(labelAngle=0), title=None),
+        x=alt.X(f'{x_axis}:O', sort=None, axis=alt.Axis(labelAngle=CHART_LABELS_ANGLE), title=None),
         y=alt.Y(y_axis, title=None))
 
 def bar_chart_alternate(df, title, x_axis, y_axis):
     return alt.Chart(df, title=title).mark_bar().encode(
-        x=alt.X(x_axis, sort=None, axis=alt.Axis(labelAngle=0), title=None),
+        x=alt.X(x_axis, sort=None, axis=alt.Axis(labelAngle=CHART_LABELS_ANGLE), title=None),
         y=alt.Y(y_axis, title=None)
     ).configure_bar(
         color='yellowgreen',
@@ -55,7 +78,7 @@ def bar_chart_alternate(df, title, x_axis, y_axis):
 
 def bar_chart_team2(df, title, x_axis, y_axis):
     return alt.Chart(df, title=title).mark_bar().encode(
-        x=alt.X(x_axis, sort=None, axis=alt.Axis(labelAngle=0), title=None),
+        x=alt.X(x_axis, sort=None, axis=alt.Axis(labelAngle=CHART_LABELS_ANGLE), title=None),
         y=alt.Y(y_axis, title=None)
     ).configure_bar(
         color='orangered',
@@ -64,7 +87,7 @@ def bar_chart_team2(df, title, x_axis, y_axis):
 
 def stacked_bar_chart(df, title, x_axis, y_axis, color):
     return alt.Chart(df, title=title).mark_bar().encode(
-        x=alt.X(f'{x_axis}:N', sort=alt.EncodingSortField(field=y_axis, op='sum', order='descending'), axis=alt.Axis(labelAngle=0), title=None),
+        x=alt.X(f'{x_axis}:N', sort=alt.EncodingSortField(field=y_axis, op='sum', order='descending'), axis=alt.Axis(labelAngle=CHART_LABELS_ANGLE), title=None),
         y=alt.Y(f'{y_axis}:Q', title=None),
         color=alt.Color(f'{color}:N', legend=alt.Legend(title=color), scale=alt.Scale(domain=['1', '2'], range=['lightskyblue', 'orangered']))
     )
@@ -253,7 +276,7 @@ def batch_request(match_ids, api_url, db_name):
     conn.close()
 
 ##-------------------------------------------------------------------------------------------
-## MAIN CONTENT
+## PAGES
 ##-------------------------------------------------------------------------------------------
 
 def sidebar(df):
@@ -295,10 +318,16 @@ def sidebar(df):
         use_container_width=True
     )
 
+    st.sidebar.divider()
+
+    st.sidebar.caption('Settings:')
+    horizontal_labels = st.sidebar.checkbox('Draw chart labels horizontally', value=True)
+
     options['team'] = team
     options['player'] = player
     options['match_ids'] = match_ids
     options['map'] = map
+    options['horizontal_labels'] = horizontal_labels
 
     return options
 
@@ -543,17 +572,8 @@ def map_statistics(df, map):
         stacked_bar_chart(chassis_team_counts, 'Top chassis picks', 'Chassis', 'count', 'Team'), use_container_width=True)
 
 ##-------------------------------------------------------------------------------------------
-## INITIALIZATION
+## MAIN
 ##-------------------------------------------------------------------------------------------
-
-load_dotenv()
-DB_NAME = getenv("DB_NAME")
-API_KEY = getenv("API_KEY")
-API_URL = getenv("API_URL")
-MECH_DATA_URL = getenv("MECH_DATA_URL")
-ROSTERS_URL = getenv("ROSTERS_URL")
-APP_TITLE = getenv("APP_TITLE")
-API_URL = API_URL.replace('%2', API_KEY)
 
 st.logo('Logo.png', icon_image='Logo.png')
 st.set_page_config(page_title="Stats Tool", layout='wide')
@@ -564,6 +584,8 @@ options = sidebar(df)
 
 if options['match_ids']:
     batch_request(options['match_ids'], API_URL, DB_NAME)
+if 'horizontal_labels' in options:
+    set_chart_labels_angle(options['horizontal_labels'])
 
 if not options['team'] and not options['player'] and not options['map']:
     general_statistics(df)
