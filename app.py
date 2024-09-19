@@ -2,6 +2,7 @@ import requests
 import sqlite3 as sql
 
 import pandas as pd
+import numpy as np
 import streamlit as st
 import altair as alt
 
@@ -89,8 +90,48 @@ def stacked_bar_chart(df, title, x_axis, y_axis, color):
     return alt.Chart(df, title=title).mark_bar().encode(
         x=alt.X(f'{x_axis}:N', sort=alt.EncodingSortField(field=y_axis, op='sum', order='descending'), axis=alt.Axis(labelAngle=CHART_LABELS_ANGLE), title=None),
         y=alt.Y(f'{y_axis}:Q', title=None),
-        color=alt.Color(f'{color}:N', legend=alt.Legend(title=color), scale=alt.Scale(domain=['1', '2'], range=['lightskyblue', 'orangered']))
+        color=alt.Color(f'{color}:N', legend=alt.Legend(title=color), scale=alt.Scale(domain=['1', '2'], range=['lightskyblue', 'orangered'])),
+        tooltip=[
+            alt.Tooltip(f'{color}:N', title=color),
+            alt.Tooltip(f'{y_axis}:Q', title=y_axis)
+        ]
     )
+
+def negative_stacked_bar_chart_mech_usage(df):
+    base = alt.Chart(df, title='Mech usage by tonnage').mark_bar().encode(
+        x=alt.X('Tonnage:N', title=None, sort=None, axis=alt.Axis(labelAngle=CHART_LABELS_ANGLE)),
+        y=alt.Y('Positive:Q', title=None, stack='zero'),
+        y2=alt.Y2('Negative:Q'),
+        tooltip=[
+            alt.Tooltip('Result:N', title="Result"),
+            alt.Tooltip('count:Q', title="Uses")
+        ]
+    )
+    bars = base.mark_bar().encode(
+        color=alt.Color('Result', scale=alt.Scale(domain=['WIN', 'LOSS']))
+    )
+    return bars
+
+def horizontal_bar_chart_match_duration(df):
+    return alt.Chart(df, title='Average match duration (min)').mark_bar().encode(
+        x=alt.X('Duration:Q', title=None, axis=alt.Axis(format=".2f")),
+        y=alt.Y('Team:N', title=None, sort=None)
+    )
+
+def negative_horizontal_stacked_bar_chart_map_stats(df):
+    base = alt.Chart(df, title='Map statistics').mark_bar().encode(
+        x=alt.X('Positive:Q', title=None, stack='zero', sort=None),
+        y=alt.Y('Map:N', title=None, sort=None),
+        x2=alt.X2('Negative:Q'),
+        tooltip=[
+            alt.Tooltip('Result:N', title="Result"),
+            alt.Tooltip('count:Q', title="Count")
+        ]
+    )
+    bars = base.mark_bar().encode(
+        color=alt.Color('Result', scale=alt.Scale(domain=['WIN', 'LOSS']))
+    )
+    return bars
 
 ##-------------------------------------------------------------------------------------------
 ## DATA SOURCES
@@ -321,7 +362,7 @@ def sidebar(df):
     st.sidebar.divider()
 
     st.sidebar.caption('Settings:')
-    horizontal_labels = st.sidebar.checkbox('Draw chart labels horizontally', value=True)
+    horizontal_labels = st.sidebar.checkbox('Draw chart labels horizontally', value=False)
 
     options['team'] = team
     options['player'] = player
@@ -357,6 +398,16 @@ def general_statistics(df):
     top_assault_mechs = assault_mechs_data['Mech'].value_counts().sort_values(ascending=False).head(5).reset_index()
     top_assault_chassis = assault_mechs_data['Chassis'].value_counts().sort_values(ascending=False).head(5).reset_index()
 
+    mech_usage = df.groupby('Tonnage')['MatchResult'].value_counts().reset_index().rename(columns={'MatchResult': 'Result'})
+    mech_usage['Positive'] = mech_usage.apply(lambda row: row['count'] if row['Result'] == 'WIN' else 0, axis=1)
+    mech_usage['Negative'] = mech_usage.apply(lambda row: -row['count'] if row['Result'] == 'LOSS' else 0, axis=1)
+    mech_usage = mech_usage.sort_values('Tonnage', ascending=True)
+
+    df['MatchDuration'] = df['MatchDuration'].astype(int)
+    match_duration = df.groupby('TeamName')['MatchDuration'].mean().sort_values(ascending=True).reset_index()
+    match_duration = match_duration.rename(columns={'MatchDuration': 'Duration', 'TeamName': 'Team'})
+    match_duration['Duration'] = match_duration['Duration'] / 60
+
     col1, col2, col3, col4, col5 = st.columns([1, 1, 1, 1, 1])
     col1.metric(label='Teams', value=teams_number)
     col2.metric(label='Games played', value=games_played)
@@ -367,6 +418,9 @@ def general_statistics(df):
     left_column, right_column = st.columns(2, gap='medium')
 
     # left_column
+    left_column.altair_chart(
+        negative_stacked_bar_chart_mech_usage(mech_usage), use_container_width=True)
+    
     left_column.altair_chart(
         bar_chart(top_mechs, 'Most used mechs', 'Mech', 'count'), use_container_width=True)
 
@@ -384,6 +438,9 @@ def general_statistics(df):
 
     # right_column
     right_column.altair_chart(
+        horizontal_bar_chart_match_duration(match_duration), use_container_width=True)
+
+    right_column.altair_chart(
         bar_chart(top_chassis, 'Most used chassis', 'Chassis', 'count', style='alternate'), use_container_width=True)
 
     right_column.altair_chart(
@@ -397,7 +454,7 @@ def general_statistics(df):
     
     right_column.altair_chart(
         bar_chart(top_assault_chassis, 'Most used assault chassis', 'Chassis', 'count', style='alternate'), use_container_width=True)
-
+    
 def team_statistics(df, team, map):
     if map:
         team_data = df[(df['TeamName'] == team) & (df['Map'] == map)]
@@ -422,10 +479,22 @@ def team_statistics(df, team, map):
     avg_damage = safe_division(team_data['Damage'].sum(), games_played)
 
     weight_class_order = ['LIGHT', 'MEDIUM', 'HEAVY', 'ASSAULT']
-    class_distribution = team_data.groupby('Class')['Class'].value_counts().sort_values(ascending=False).reindex(weight_class_order).reset_index()
+    class_distribution = team_data.groupby('Class')['Class'].value_counts().reindex(weight_class_order).reset_index()
     top_mechs = team_data['Mech'].value_counts().sort_values(ascending=False).head(10).reset_index()
     top_chassis = team_data['Chassis'].value_counts().sort_values(ascending=False).head(10).reset_index()
     
+    # Pilot statistics
+    team_data['Deaths'] = np.where(team_data['HealthPercentage'] == 0, 1, 0)
+    pilot_stats = team_data.groupby('Username')[['MatchScore', 'Tonnage', 'Kills', 'KillsMostDamage', 'Assists', 'ComponentsDestroyed', 'Deaths', 'Damage', 'TeamDamage']].mean().reset_index()
+    pilot_stats = pilot_stats.rename(columns={'MatchScore': 'Score', 'KillsMostDamage': 'KMDDs', 'ComponentsDestroyed': 'CDs', 'Damage': 'DMG', 'TeamDamage': 'TD'})
+    pilot_stats = pilot_stats.style.format(subset=['Score', 'Tonnage', 'Kills', 'KMDDs', 'Assists', 'CDs', 'Deaths', 'DMG', 'TD'], formatter="{:.2f}")
+    
+    # Map statistics
+    map_stats = team_data.groupby(['Map', 'MatchResult'])['MatchID'].nunique().reset_index(name='count').rename(columns={'MatchResult': 'Result'})
+    map_stats['Positive'] = map_stats.apply(lambda row: row['count'] if row['Result'] == 'WIN' else 0, axis=1)
+    map_stats['Negative'] = map_stats.apply(lambda row: -row['count'] if row['Result'] == 'LOSS' else 0, axis=1)
+    map_stats = map_stats.sort_values('Map', ascending=True)
+
     if map:
         col1, col2 = st.columns([1, 1])
         col1.subheader(f'Team: {team}')
@@ -445,14 +514,22 @@ def team_statistics(df, team, map):
 
     left_column, right_column = st.columns(2, gap='medium')
 
+    # Left column
     left_column.altair_chart(
         bar_chart(top_mechs, 'Most used mechs', 'Mech', 'count'), use_container_width=True)
     
     left_column.altair_chart(
         bar_chart(class_distribution, 'Weight class distribution', 'Class', 'count'), use_container_width=True)
     
+    left_column.subheader('Average pilot statistics')
+    left_column.dataframe(pilot_stats, hide_index=True, use_container_width=True)
+    
+    # Right column
     right_column.altair_chart(
         bar_chart(top_chassis, 'Most used chassis', 'Chassis', 'count', style='alternate'), use_container_width=True)
+    
+    right_column.altair_chart(
+        negative_horizontal_stacked_bar_chart_map_stats(map_stats), use_container_width=True)
 
 def player_statistics(df, player, map):
     if map:
