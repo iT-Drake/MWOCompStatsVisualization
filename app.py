@@ -601,6 +601,8 @@ def map_statistics(df, map):
     t1_wins = safe_division(t1_games[t1_games['MatchResult'] == 'WIN'].shape[0], t1_games.shape[0])
     t2_games = map_data[map_data['Team'] == '2']
     t2_wins = safe_division(t2_games[t2_games['MatchResult'] == 'WIN'].shape[0], t2_games.shape[0])
+    map_data['MatchDuration'] = map_data['MatchDuration'].astype(int)
+    avg_duration = map_data['MatchDuration'].mean() / 60
 
     # Average tonnage T1
     lance_map = {'1': 'Alpha', '2': 'Bravo', '3': 'Charlie'}
@@ -627,10 +629,11 @@ def map_statistics(df, map):
 
     st.subheader(f'Map: {map}')
 
-    col1, col2, col3 = st.columns([1, 1, 1])
+    col1, col2, col3, col4 = st.columns([1, 1, 1, 1])
     col1.metric(label='Games played', value=games_played)
     col2.metric(label='Team 1 Wins', value=f'{100 * t1_wins:.0f} %')
     col3.metric(label='Team 2 Wins', value=f'{100 * t2_wins:.0f} %')
+    col4.metric(label='Avg Duration (min)', value=f'{avg_duration:.2f}')
 
     st.divider()
 
