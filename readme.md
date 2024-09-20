@@ -30,7 +30,7 @@
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
-![Application](Application.png)
+![Application](img/Application.png)
 
 This application is designed to fetch API data, store it during the tournament and visualize stats for teams and pilots.
 
