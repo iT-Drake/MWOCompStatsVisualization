@@ -485,8 +485,18 @@ def team_statistics(df, team, map):
     
     # Pilot statistics
     team_data['Deaths'] = np.where(team_data['HealthPercentage'] == 0, 1, 0)
-    pilot_stats = team_data.groupby('Username')[['MatchScore', 'Tonnage', 'Kills', 'KillsMostDamage', 'Assists', 'ComponentsDestroyed', 'Deaths', 'Damage', 'TeamDamage']].mean().reset_index()
-    pilot_stats = pilot_stats.rename(columns={'MatchScore': 'Score', 'KillsMostDamage': 'KMDDs', 'ComponentsDestroyed': 'CDs', 'Damage': 'DMG', 'TeamDamage': 'TD'})
+    pilot_stats = team_data.groupby('Username', as_index=False).agg(
+        Score=('MatchScore','mean'),
+        Tonnage=('Tonnage','mean'),
+        Kills=('Kills','mean'),
+        KMDDs=('KillsMostDamage','mean'),
+        Assists=('Assists','mean'),
+        CDs=('ComponentsDestroyed','mean'),
+        Deaths=('Deaths','mean'),
+        DMG=('Damage','mean'),
+        TD=('TeamDamage','mean'),
+        Games=('MatchID','nunique')
+    )
     pilot_stats = pilot_stats.style.format(subset=['Score', 'Tonnage', 'Kills', 'KMDDs', 'Assists', 'CDs', 'Deaths', 'DMG', 'TD'], formatter="{:.2f}")
     
     # Map statistics
