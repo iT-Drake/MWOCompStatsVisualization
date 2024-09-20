@@ -21,6 +21,7 @@ API_URL = getenv("API_URL")
 MECH_DATA_URL = getenv("MECH_DATA_URL")
 ROSTERS_URL = getenv("ROSTERS_URL")
 APP_TITLE = getenv("APP_TITLE")
+TOURNAMENT = getenv("TOURNAMENT")
 API_URL = API_URL.replace('%2', API_KEY)
 
 CHART_LABELS_ANGLE = 0
@@ -173,6 +174,7 @@ def initialize_database(db_name):
         create_table_sql = """CREATE TABLE IF NOT EXISTS CompData (
             ID INTEGER PRIMARY KEY,
             MatchID INTEGER,
+            Tournament TEXT,
             Map TEXT,
             WinningTeam TEXT,
             Team1Score INTEGER,
@@ -219,7 +221,7 @@ def read_comp_data(db_name):
 ##-------------------------------------------------------------------------------------------
 
 def match_data_columns():
-    return ['MatchID', 'Map', 'WinningTeam', 'Team1Score', 'Team2Score', 'MatchDuration', 'CompleteTime', 'MatchResult',
+    return ['MatchID', 'Tournament', 'Map', 'WinningTeam', 'Team1Score', 'Team2Score', 'MatchDuration', 'CompleteTime', 'MatchResult',
         'Username', 'Team', 'TeamName', 'Lance', 'MechItemID', 'Mech', 'Chassis', 'Tonnage', 'Class', 'Type',
         'HealthPercentage', 'Kills', 'KillsMostDamage', 'Assists', 'ComponentsDestroyed', 'MatchScore', 'Damage', 'TeamDamage']
 
@@ -243,6 +245,7 @@ def match_data(id, match_details, user_details):
 
         new_line = {}
         new_line['MatchID'] = id
+        new_line['Tournament'] = TOURNAMENT
         new_line['Map'] = match_details['Map']
         new_line['WinningTeam'] = match_details['WinningTeam']
         new_line['Team1Score'] = match_details['Team1Score']
@@ -665,7 +668,7 @@ def map_statistics(df, map):
 ## MAIN
 ##-------------------------------------------------------------------------------------------
 
-st.logo('Logo.png', icon_image='Logo.png')
+st.logo('./img/Logo.png', icon_image='./img/Logo.png')
 st.set_page_config(page_title="Stats Tool", layout='wide')
 st.title(APP_TITLE)
 
