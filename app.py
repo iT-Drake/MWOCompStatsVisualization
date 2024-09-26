@@ -115,8 +115,9 @@ def negative_stacked_bar_chart_mech_usage(df):
 
 def horizontal_bar_chart_match_duration(df):
     return alt.Chart(df, title='Average match duration (min)').mark_bar().encode(
-        x=alt.X('Duration:Q', title=None, axis=alt.Axis(format=".2f")),
-        y=alt.Y('Team:N', title=None, sort=None)
+        x=alt.X('Duration:Q', title=None),
+        y=alt.Y('Team:N', title=None, sort=None),
+        tooltip=['Team', alt.Tooltip('Duration:Q', format='.2f')]
     )
 
 def negative_horizontal_stacked_bar_chart_map_stats(df):
@@ -211,7 +212,7 @@ def read_comp_data(db_name):
     initialize_database(db_name)
 
     conn = sql.connect(db_name)
-    df = pd.read_sql_query("SELECT * FROM CompData", conn, index_col='ID')
+    df = pd.read_sql_query("SELECT * FROM CompData ORDER BY CompleteTime, Team, Lance, Username", conn, index_col='ID')
     conn.close()
 
     return df
@@ -325,34 +326,39 @@ def batch_request(match_ids, api_url, db_name):
 
 def sidebar(df):
     options = {}
+    filtered_data = df
+
+    # Tournament
+    tournaments = filtered_data['Tournament'].drop_duplicates().sort_values(ascending=True)
+    tournament = st.sidebar.selectbox('Select a tournament', tournaments, index=None, placeholder='Select a tournament', label_visibility='hidden')
+    if tournament:
+        filtered_data = filtered_data[filtered_data['Tournament'] == tournament]
 
     # Team
-    teams = df['TeamName'].drop_duplicates().sort_values(ascending=True)
+    teams = filtered_data['TeamName'].drop_duplicates().sort_values(ascending=True)
     team = st.sidebar.selectbox('Select a team', teams, index=None, placeholder='Select a team', label_visibility='hidden')
+    if team:
+        filtered_data = filtered_data[filtered_data['TeamName'] == team]
     
     # Player
-    if team:
-        team_data = df[df['TeamName'] == team]
-        players = team_data['Username'].drop_duplicates().sort_values(ascending=True)
-    else:
-        players = df['Username'].drop_duplicates().sort_values(ascending=True)
+    players = filtered_data['Username'].drop_duplicates().sort_values(ascending=True)
     player = st.sidebar.selectbox('Select a pilot', players, index=None, placeholder='Select a pilot', label_visibility='hidden')
+    if player:
+        filtered_data = filtered_data[filtered_data['Username'] == player]
 
     # Map
-    if not team and not player:
-        maps = df['Map'].drop_duplicates().sort_values(ascending=True)
-    elif team and not player:
-        maps = team_data['Map'].drop_duplicates().sort_values(ascending=True)
-    else:
-        player_data = df[df['Username'] == player]
-        maps = player_data['Map'].drop_duplicates().sort_values(ascending=True)
+    maps = filtered_data['Map'].drop_duplicates().sort_values(ascending=True)
     map = st.sidebar.selectbox('Select a map', maps, index=None, placeholder='Select a map', label_visibility='hidden')
+    if map:
+        filtered_data = filtered_data[filtered_data['Map'] == map]
 
+    # Match ID submission form
     form = st.sidebar.form("data_fetching", clear_on_submit=True)
     text_area = form.text_area('Get API data for provided IDs:', placeholder='List of Match IDs', key='match_ids')
     match_ids = text_area.strip().splitlines() if text_area else []
     form.form_submit_button('Submit', use_container_width=True)
 
+    # CSV data dump
     csv = df.to_csv(index=False).encode('utf-8')
     st.sidebar.download_button(
         label="Download data as CSV",
@@ -364,9 +370,11 @@ def sidebar(df):
 
     st.sidebar.divider()
 
+    # Settings
     st.sidebar.caption('Settings:')
     horizontal_labels = st.sidebar.checkbox('Draw chart labels horizontally', value=False)
 
+    options['data'] = filtered_data
     options['team'] = team
     options['player'] = player
     options['match_ids'] = match_ids
@@ -375,7 +383,9 @@ def sidebar(df):
 
     return options
 
-def general_statistics(df):
+def general_statistics(options):
+    df = options['data']
+
     games_played = df['MatchID'].nunique()
     teams_number = df['TeamName'].nunique()
     mechs_killed = df['Kills'].sum()
@@ -418,51 +428,49 @@ def general_statistics(df):
     col4.metric(label='Components destroyed', value=components_destroyed)
     col5.metric(label='Team damage dealt', value=team_damage)
 
-    left_column, right_column = st.columns(2, gap='medium')
+    st.divider()
 
-    # left_column
-    left_column.altair_chart(
+    # Row 1
+    col1, col2, col3, col4 = st.columns(4)
+    col1.altair_chart(
         negative_stacked_bar_chart_mech_usage(mech_usage), use_container_width=True)
-    
-    left_column.altair_chart(
-        bar_chart(top_mechs, 'Most used mechs', 'Mech', 'count'), use_container_width=True)
-
-    left_column.altair_chart(
-        bar_chart(top_light_mechs, 'Most used light mechs', 'Mech', 'count'), use_container_width=True)
-
-    left_column.altair_chart(
-        bar_chart(top_medium_mechs, 'Most used medium mechs', 'Mech', 'count'), use_container_width=True)
-
-    left_column.altair_chart(
-        bar_chart(top_heavy_mechs, 'Most used heavy mechs', 'Mech', 'count'), use_container_width=True)
-    
-    left_column.altair_chart(
-        bar_chart(top_assault_mechs, 'Most used assault mechs', 'Mech', 'count'), use_container_width=True)
-
-    # right_column
-    right_column.altair_chart(
+    col2.altair_chart(
         horizontal_bar_chart_match_duration(match_duration), use_container_width=True)
-
-    right_column.altair_chart(
+    col3.altair_chart(
+        bar_chart(top_mechs, 'Most used mechs', 'Mech', 'count'), use_container_width=True)
+    col4.altair_chart(
         bar_chart(top_chassis, 'Most used chassis', 'Chassis', 'count', style='alternate'), use_container_width=True)
-
-    right_column.altair_chart(
-        bar_chart(top_light_chassis, 'Most used light chassis', 'Chassis', 'count', style='alternate'), use_container_width=True)
-
-    right_column.altair_chart(
-        bar_chart(top_medium_chassis, 'Most used medium chassis', 'Chassis', 'count', style='alternate'), use_container_width=True)
-
-    right_column.altair_chart(
-        bar_chart(top_heavy_chassis, 'Most used heavy chassis', 'Chassis', 'count', style='alternate'), use_container_width=True)
     
-    right_column.altair_chart(
+    st.divider()
+
+    # Row 2
+    col1, col2, col3, col4 = st.columns(4)
+    col1.altair_chart(
+        bar_chart(top_light_mechs, 'Most used light mechs', 'Mech', 'count'), use_container_width=True)
+    col2.altair_chart(
+        bar_chart(top_medium_mechs, 'Most used medium mechs', 'Mech', 'count'), use_container_width=True)
+    col3.altair_chart(
+        bar_chart(top_heavy_mechs, 'Most used heavy mechs', 'Mech', 'count'), use_container_width=True)
+    col4.altair_chart(
+        bar_chart(top_assault_mechs, 'Most used assault mechs', 'Mech', 'count'), use_container_width=True)
+    
+    st.divider()
+    
+    # Row 3
+    col1, col2, col3, col4 = st.columns(4)
+    col1.altair_chart(
+        bar_chart(top_light_chassis, 'Most used light chassis', 'Chassis', 'count', style='alternate'), use_container_width=True)
+    col2.altair_chart(
+        bar_chart(top_medium_chassis, 'Most used medium chassis', 'Chassis', 'count', style='alternate'), use_container_width=True)
+    col3.altair_chart(
+        bar_chart(top_heavy_chassis, 'Most used heavy chassis', 'Chassis', 'count', style='alternate'), use_container_width=True)
+    col4.altair_chart(
         bar_chart(top_assault_chassis, 'Most used assault chassis', 'Chassis', 'count', style='alternate'), use_container_width=True)
     
-def team_statistics(df, team, map):
-    if map:
-        team_data = df[(df['TeamName'] == team) & (df['Map'] == map)]
-    else:
-        team_data = df[df['TeamName'] == team]
+def team_statistics(options):
+    team_data = options['data']
+    team = options['team']
+    map = options['map']
 
     if team_data.shape[0] == 0:
         write_error(f'Data not found for team: {team}')
@@ -525,30 +533,28 @@ def team_statistics(df, team, map):
 
     st.divider()
 
-    left_column, right_column = st.columns(2, gap='medium')
-
-    # Left column
-    left_column.altair_chart(
+    # Row 1
+    col1, col2, col3 = st.columns(3)
+    col1.altair_chart(
         bar_chart(top_mechs, 'Most used mechs', 'Mech', 'count'), use_container_width=True)
-    
-    left_column.altair_chart(
-        bar_chart(class_distribution, 'Weight class distribution', 'Class', 'count'), use_container_width=True)
-    
-    left_column.subheader('Average pilot statistics')
-    left_column.dataframe(pilot_stats, hide_index=True, use_container_width=True)
-    
-    # Right column
-    right_column.altair_chart(
+    col2.altair_chart(
         bar_chart(top_chassis, 'Most used chassis', 'Chassis', 'count', style='alternate'), use_container_width=True)
-    
-    right_column.altair_chart(
+    col3.altair_chart(
+        bar_chart(class_distribution, 'Weight class distribution', 'Class', 'count'), use_container_width=True)
+
+    st.divider()
+
+    # Row 2
+    col1, col2 = st.columns(2)
+    col1.subheader('Average pilot statistics')
+    col1.dataframe(pilot_stats, hide_index=True, use_container_width=True)
+    col2.altair_chart(
         negative_horizontal_stacked_bar_chart_map_stats(map_stats), use_container_width=True)
 
-def player_statistics(df, player, map):
-    if map:
-        player_data = df[(df['Username'] == player) & (df['Map'] == map)]
-    else:    
-        player_data = df[df['Username'] == player]
+def player_statistics(options):
+    player_data = options['data']
+    player = options['team']
+    map = options['map']
 
     if player_data.shape[0] == 0:
         write_error(f'Data not found for player: {player}')
@@ -573,11 +579,14 @@ def player_statistics(df, player, map):
     win_loss_per_mech = player_data.groupby('Mech')['MatchResult'].apply(lambda x: safe_division(x.value_counts().get('WIN', 0), x.value_counts().get('LOSS', 1)))
     kills_to_deaths_per_mech = player_data.groupby('Mech')[['Mech', 'Kills', 'HealthPercentage']].apply(lambda x: safe_division(x['Kills'].sum(), x['HealthPercentage'].eq(0).sum()))
 
-    mech_stats = top_mechs.copy().rename(columns={'count': 'Uses'})
+    mech_stats = top_mechs.copy().rename(columns={'count': 'Games'})
     mech_stats['Avg Dmg'] = mech_stats['Mech'].map(avg_damage_per_mech)
     mech_stats['W/L'] = mech_stats['Mech'].map(win_loss_per_mech)
     mech_stats['K/D'] = mech_stats['Mech'].map(kills_to_deaths_per_mech)
 
+    player_history = player_data.groupby(['Tournament', 'TeamName'], as_index=False)['MatchID'].nunique().rename(columns={'TeamName': 'Team', 'MatchID': 'Games'})
+
+    # Subheader
     if map:
         col1, col2 = st.columns([1, 1])
         col1.subheader(f'Player: {player}')
@@ -585,6 +594,7 @@ def player_statistics(df, player, map):
     else:
         st.subheader(f'Player: {player}')
 
+    # Row 1, 2
     col1, col2, col3, col4 = st.columns([1, 1, 1, 1])
     col1.metric(label='Games played', value=total_games)
     col1.metric(label='Win/Loss ratio', value=f'{win_loss_ratio:.2f}')
@@ -598,11 +608,19 @@ def player_statistics(df, player, map):
     col4.metric(label='Avg damage (per drop)', value=f'{avg_damage:.2f}')
     col4.metric(label='Total damage', value=total_damage)
 
-    st.subheader('Most used mechs:')
-    st.dataframe(mech_stats, hide_index=True, use_container_width=True)
+    st.divider()
 
-def map_statistics(df, map):
-    map_data = df[df['Map'] == map]
+    # Row 3
+    col1, col2 = st.columns(2)
+    col1.subheader('Teams and tournaments:')
+    col1.dataframe(player_history, hide_index=True, use_container_width=True)
+
+    col2.subheader('Most used mechs:')
+    col2.dataframe(mech_stats, hide_index=True, use_container_width=True)
+
+def map_statistics(options):
+    map_data = options['data']
+    map = options['map']
 
     if map_data.shape[0] == 0:
         write_error(f'No data for the map: {map}')
@@ -681,10 +699,10 @@ if 'horizontal_labels' in options:
     set_chart_labels_angle(options['horizontal_labels'])
 
 if not options['team'] and not options['player'] and not options['map']:
-    general_statistics(df)
+    general_statistics(options)
 elif not options['team'] and not options['player']:
-    map_statistics(df, options['map'])
+    map_statistics(options)
 elif options['player']:
-    player_statistics(df, options['player'], options['map'])
+    player_statistics(options)
 elif options['team']:
-    team_statistics(df, options['team'], options['map'])
+    team_statistics(options)
