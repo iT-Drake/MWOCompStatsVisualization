@@ -7,7 +7,7 @@
 <br/>
 <div align="center">
     <a href="https://github.com/iT-Drake/MWOCompStatsVisualization">
-        <img src="Logo.png" alt="Logo" width="480" height="60">
+        <img src="img/Logo.png" alt="Logo" width="480" height="60">
     </a>
     <h3 align="center">MWO Competitive Stats Visualization</h3>
     <p align="center">
