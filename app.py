@@ -613,10 +613,9 @@ def team_statistics(options):
             col3.altair_chart(
                 bar_chart(class_distribution, 'Weight class distribution', 'Class', 'count'), use_container_width=True)
 
-
 def player_statistics(options):
     player_data = options['data']
-    player = options['team']
+    player = options['player']
     map = options['map']
 
     if player_data.shape[0] == 0:
