@@ -120,9 +120,13 @@ def horizontal_bar_chart_match_duration(df):
         tooltip=['Team', alt.Tooltip('Duration:Q', format='.2f')]
     )
 
-def negative_horizontal_stacked_bar_chart_map_stats(df):
-    base = alt.Chart(df, title='Map statistics').mark_bar().encode(
-        x=alt.X('Positive:Q', title=None, stack='zero', sort=None),
+def negative_horizontal_stacked_bar_chart_map_stats(df, title):
+    upper_bound = df['Positive'].max()
+    lower_bound = df['Negative'].min()
+    ticks = int(upper_bound - lower_bound)
+
+    base = alt.Chart(df, title=title).mark_bar().encode(
+        x=alt.X('Positive:Q', title=None, stack='zero', sort=None).axis(tickCount=ticks),
         y=alt.Y('Map:N', title=None, sort=None),
         x2=alt.X2('Negative:Q'),
         tooltip=[
@@ -558,60 +562,106 @@ def team_statistics(options):
         col1.subheader('Average pilot statistics')
         col1.dataframe(pilot_stats, hide_index=True, use_container_width=True)
         col2.altair_chart(
-            negative_horizontal_stacked_bar_chart_map_stats(map_stats), use_container_width=True)
+            negative_horizontal_stacked_bar_chart_map_stats(map_stats, 'Map statistics'), use_container_width=True)
     elif 'teams' in options:
         data = options['data']
-        for team in options['teams']:
-            team_data = data[data['TeamName'] == team]
-            map = options['map']
 
-            if team_data.shape[0] == 0:
-                write_error(f'Data not found for team: {team}')
-                return
+        mechs, maps, rosters = st.tabs(['Mechs', 'Maps', 'Rosters'])
+        with mechs:
+            for team in options['teams']:
+                team_data = data[data['TeamName'] == team]
+                map = options['map']
+
+                if team_data.shape[0] == 0:
+                    write_error(f'Data not found for team: {team}')
+                    return
+                
+                games_played = team_data['MatchID'].nunique()
+                wins = team_data[team_data['MatchResult'] == 'WIN'].drop_duplicates(subset=['MatchID']).shape[0]
+                losses = team_data[team_data['MatchResult'] == 'LOSS'].drop_duplicates(subset=['MatchID']).shape[0]
+                win_loss_ratio = safe_division(wins, losses)
+
+                t1_games = team_data[team_data['Team'] == '1']
+                t1_wins = safe_division(t1_games[t1_games['MatchResult'] == 'WIN'].shape[0], t1_games.shape[0])
+                t2_games = team_data[team_data['Team'] == '2']
+                t2_wins = safe_division(t2_games[t2_games['MatchResult'] == 'WIN'].shape[0], t2_games.shape[0])
+
+                avg_kills = safe_division(team_data['Kills'].sum(), games_played)
+                avg_damage = safe_division(team_data['Damage'].sum(), games_played)
+
+                weight_class_order = ['LIGHT', 'MEDIUM', 'HEAVY', 'ASSAULT']
+                class_distribution = team_data.groupby('Class')['Class'].value_counts().reindex(weight_class_order).reset_index()
+                top_mechs = team_data['Mech'].value_counts().sort_values(ascending=False).head(10).reset_index()
+                top_chassis = team_data['Chassis'].value_counts().sort_values(ascending=False).head(10).reset_index()
+                
+                if map:
+                    col1, col2 = st.columns([1, 1])
+                    col1.subheader(f'Team: {team}')
+                    col2.subheader(f'Map: {map}')
+                else:
+                    st.subheader(f'Team: {team}')
+
+                col1, col2, col3, col4, col5, col6 = st.columns([1, 1, 1, 1, 1, 1])
+                col1.metric(label='Games played', value=games_played)
+                col2.metric(label='Win/Loss ratio', value=f'{win_loss_ratio:.2f}')
+                col3.metric(label='Team 1 Wins', value=f'{100 * t1_wins:.0f} %')
+                col4.metric(label='Team 2 Wins', value=f'{100 * t2_wins:.0f} %')
+                col5.metric(label='Avg kills (per drop)', value=f'{avg_kills:.2f}')
+                col6.metric(label='Avg damage (per drop)', value=f'{avg_damage:.2f}')
+
+                st.divider()
+
+                # Row 1
+                col1, col2, col3 = st.columns(3)
+                col1.altair_chart(
+                    bar_chart(top_mechs, 'Most used mechs', 'Mech', 'count'), use_container_width=True)
+                col2.altair_chart(
+                    bar_chart(top_chassis, 'Most used chassis', 'Chassis', 'count', style='alternate'), use_container_width=True)
+                col3.altair_chart(
+                    bar_chart(class_distribution, 'Weight class distribution', 'Class', 'count'), use_container_width=True)
+
+        with maps:
+            max_columns = 3
             
-            games_played = team_data['MatchID'].nunique()
-            wins = team_data[team_data['MatchResult'] == 'WIN'].shape[0]
-            losses = team_data[team_data['MatchResult'] == 'LOSS'].shape[0]
-            win_loss_ratio = safe_division(wins, losses)
+            map_stats = data.groupby(['Map', 'TeamName', 'MatchResult'])['MatchID'].nunique().reset_index(name='count').rename(columns={'MatchResult': 'Result', 'TeamName': 'Team'})
+            map_stats['Positive'] = map_stats.apply(lambda row: row['count'] if row['Result'] == 'WIN' else 0, axis=1)
+            map_stats['Negative'] = map_stats.apply(lambda row: -row['count'] if row['Result'] == 'LOSS' else 0, axis=1)
+            map_stats = map_stats.sort_values(by=['Team', 'Map'], ascending=True)
 
-            t1_games = team_data[team_data['Team'] == '1']
-            t1_wins = safe_division(t1_games[t1_games['MatchResult'] == 'WIN'].shape[0], t1_games.shape[0])
-            t2_games = team_data[team_data['Team'] == '2']
-            t2_wins = safe_division(t2_games[t2_games['MatchResult'] == 'WIN'].shape[0], t2_games.shape[0])
+            teams = map_stats['Team'].drop_duplicates().sort_values(ascending=True).tolist()
+            teams_count = len(teams)
 
-            avg_kills = safe_division(team_data['Kills'].sum(), games_played)
-            avg_damage = safe_division(team_data['Damage'].sum(), games_played)
+            for i in range(0, teams_count):
+                index = i % max_columns
+                if index == 0:
+                    columns = st.columns(max_columns)
+                column = columns[index]
 
-            weight_class_order = ['LIGHT', 'MEDIUM', 'HEAVY', 'ASSAULT']
-            class_distribution = team_data.groupby('Class')['Class'].value_counts().reindex(weight_class_order).reset_index()
-            top_mechs = team_data['Mech'].value_counts().sort_values(ascending=False).head(10).reset_index()
-            top_chassis = team_data['Chassis'].value_counts().sort_values(ascending=False).head(10).reset_index()
-            
-            if map:
-                col1, col2 = st.columns([1, 1])
-                col1.subheader(f'Team: {team}')
-                col2.subheader(f'Map: {map}')
-            else:
-                st.subheader(f'Team: {team}')
+                team_name = teams[i]
+                team_data = map_stats[map_stats['Team'] == team_name]
 
-            col1, col2, col3, col4, col5, col6 = st.columns([1, 1, 1, 1, 1, 1])
-            col1.metric(label='Games played', value=games_played)
-            col2.metric(label='Win/Loss ratio', value=f'{win_loss_ratio:.2f}')
-            col3.metric(label='Team 1 Wins', value=f'{100 * t1_wins:.0f} %')
-            col4.metric(label='Team 2 Wins', value=f'{100 * t2_wins:.0f} %')
-            col5.metric(label='Avg kills (per drop)', value=f'{avg_kills:.2f}')
-            col6.metric(label='Avg damage (per drop)', value=f'{avg_damage:.2f}')
+                column.altair_chart(
+                    negative_horizontal_stacked_bar_chart_map_stats(team_data, team_name), use_container_width=True)
 
-            st.divider()
+        with rosters:
+            # Pilot statistics
+            data['Deaths'] = np.where(data['HealthPercentage'] == 0, 1, 0)
+            pilot_stats = data.groupby(['Username', 'TeamName'], as_index=False).agg(
+                Score=('MatchScore','mean'),
+                Tonnage=('Tonnage','mean'),
+                Kills=('Kills','mean'),
+                KMDDs=('KillsMostDamage','mean'),
+                Assists=('Assists','mean'),
+                CDs=('ComponentsDestroyed','mean'),
+                Deaths=('Deaths','mean'),
+                DMG=('Damage','mean'),
+                TD=('TeamDamage','mean'),
+                Games=('MatchID','nunique')
+            )
+            df_height = 35 * (pilot_stats.shape[0] + 1) + 3
 
-            # Row 1
-            col1, col2, col3 = st.columns(3)
-            col1.altair_chart(
-                bar_chart(top_mechs, 'Most used mechs', 'Mech', 'count'), use_container_width=True)
-            col2.altair_chart(
-                bar_chart(top_chassis, 'Most used chassis', 'Chassis', 'count', style='alternate'), use_container_width=True)
-            col3.altair_chart(
-                bar_chart(class_distribution, 'Weight class distribution', 'Class', 'count'), use_container_width=True)
+            pilot_stats = pilot_stats.style.format(subset=['Score', 'Tonnage', 'Kills', 'KMDDs', 'Assists', 'CDs', 'Deaths', 'DMG', 'TD'], formatter="{:.2f}")
+            st.dataframe(pilot_stats, hide_index=True, use_container_width=True, height=df_height)
 
 def player_statistics(options):
     player_data = options['data']
