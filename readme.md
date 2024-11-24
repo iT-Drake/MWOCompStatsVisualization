@@ -93,13 +93,16 @@ And a template file with data from NOV 2024 [here](data/mechdata.csv).
 
 For scalability purpuses, rosters data have two parts:
 1. A list of all tournaments with links to corresponding team rosters (link/path to it should be provided in `ROSTER_URLS` secrets key). File structure is the following:
-  | Tournament | RosterLink                                                                                     |
-  |------------|------------------------------------------------------------------------------------------------|
-  | CS24       | https://docs.google.com/spreadsheets/d/<YOUR_DOCUMENT_ID>/export?format=csv&gid=<YOUR_PAGE_ID> |
-2. Actual rosters file that contains information about team and division a pilot belongs to. You need that information because PGI's API data doesn't contain no details besides pilot name and map side they started at. File structure is the following:
-  | Pilot | Team      | Division |
-  |-------|-----------|----------|
-  | Name  | Team name | A        |
+  
+    | Tournament | RosterLink                                                                                     |
+    |------------|------------------------------------------------------------------------------------------------|
+    | CS24       | https://docs.google.com/spreadsheets/d/<YOUR_DOCUMENT_ID>/export?format=csv&gid=<YOUR_PAGE_ID> |
+
+1. Actual rosters file that contains information about team and division a pilot belongs to. You need that information because PGI's API data doesn't contain no details besides pilot name and map side they started at. File structure is the following:
+
+    | Pilot | Team      | Division |
+    |-------|-----------|----------|
+    | Name  | Team name | A        |
 
 <!-- MARKDOWN LINKS & IMAGES -->
 [contributors-shield]: https://img.shields.io/github/contributors/iT-Drake/MWOCompStatsVisualization.svg?style=for-the-badge
