@@ -1,8 +1,9 @@
 import streamlit as st
 import pandas as pd
 
-def error(message):
-    st.error(message, icon=':material/error:')
+def error(message, header='Error'):
+    st.error(header, icon=':material/error:')
+    st.markdown(f'```\n{message}\n```')
 
 def convert_to_int(value):
     formatted_value = value.replace(',', '').strip()

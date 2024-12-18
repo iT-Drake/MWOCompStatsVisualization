@@ -36,7 +36,7 @@ def general_statistics(df, options):
     col4.metric('Least played', least_played_map, least_games, delta_color='off')
 
 def map_statistics(df, options):
-    overview, details, mechs = st.tabs(['Overview', 'Details', 'Mechs'])
+    overview, details, mechs, tournaments = st.tabs(['Overview', 'Details', 'Mechs', 'Tournaments'])
     for map in options['Map']:
         map_data = filter_dataframe(df, 'Map', map)
 
@@ -48,6 +48,9 @@ def map_statistics(df, options):
 
         with mechs:
             map_mechs(map_data, map)
+
+        with tournaments:
+            map_tournaments(map_data, map)
 
 def map_overview(df, map):
     st.subheader(map)
@@ -107,6 +110,22 @@ def map_mechs(df, map):
     ]
     charts_block(charts)
     
+    st.divider()
+
+def map_tournaments(df, map):
+    win_percentage = df.groupby(['Tournament', 'Team'])['MatchResult'].apply(
+        lambda x: (x == 'WIN').sum() / len(x) if len(x) > 0 else 0
+    ).reset_index()
+
+    chart = alt.Chart(win_percentage).mark_bar().encode(
+        x=alt.X('MatchResult:Q', axis=alt.Axis(format='.0%'), title='Win rate'),
+        y=alt.Y('Tournament:N', sort='-x'),
+        color='Team:N'
+    ).properties(
+        title=map
+    )
+    st.altair_chart(chart)
+
     st.divider()
 
 header()

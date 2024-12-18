@@ -24,14 +24,22 @@ def match_data(id, match_details, user_details, tournament):
         mech_id = line['MechItemID']
         pilot = line['Username']
         pilot_upper_case = pilot.upper()
+        
         if mech_id not in mechs:
-            raise Exception(f'Mech with id={mech_id} not found')
-        if pilot_upper_case not in rosters:
-            raise Exception(f'Pilot {pilot} not found in the rosters')
+            raise Exception(f'Mech with id `{mech_id}` not found')
         mech = mechs[mech_id]
+        
+        if pilot_upper_case not in rosters:
+            raise Exception(f"Pilot `{pilot}` not found. Mech: {mech['Mech']}. Team: {line['Team']}")
         pilot_data = rosters[pilot_upper_case]
-        team = pilot_data['Team']
+        
+        team = pilot_data['Team'].strip()
+        if not team:
+            raise Exception(f"Empty team on a roster for a pilot `{pilot}`")
+        
         division = pilot_data['Division']
+        if not division:
+            raise Exception(f"Empty division on a roster for a pilot `{pilot}`")
 
         new_line = {}
         new_line['MatchID'] = id
@@ -67,25 +75,33 @@ def match_data(id, match_details, user_details, tournament):
     
     return lines
 
-def request_match_data(match_id, tournament):
-    df = None
+def fetch_api_data(match_id):
+    result = None
 
     url = API_URL.replace('%1', match_id).replace('%2', API_KEY)
     response = requests.get(url)
     if response.status_code == 200:
-        try:
-            json_data = response.json()
+        result = response.json()
+    else:
+        error(f"Error fetching id={match_id}:\nCode={response.status_code},Text={response.text}")
+
+    return result
+
+def request_match_data(match_id, tournament):
+    df = None
+
+    try:
+        json_data = fetch_api_data(match_id)
+        if json_data:
             match_details = json_data['MatchDetails']
             user_details = json_data['UserDetails']
             data = match_data(match_id, match_details, user_details, tournament)
             df = pd.DataFrame(data)
             df.columns = match_data_columns()
-        except requests.exceptions.JSONDecodeError as e:
-            error(f"Error fetching id={match_id}:\n{e}")
-        except Exception as e:
-            error(f"Error fetching id={match_id}:\n{e}")
-    else:
-        error(f"Error fetching id={match_id}:\nCode={response.status_code},Text={response.text}")
+    except requests.exceptions.JSONDecodeError as e:
+        error(f"Error fetching id={match_id}:\n{e}")
+    except Exception as e:
+        error(f"Error fetching id={match_id}:\n{e}")
     
     if df is None:
         df = pd.DataFrame([], columns=match_data_columns())
@@ -102,6 +118,8 @@ def batch_request(match_ids, tournament):
 
         df = request_match_data(match_id, tournament)
         write_comp_data(df)
+
+        unique_ids.append(match_id)
 
         # API calls limited by 60 per minute
         sleep(1)
