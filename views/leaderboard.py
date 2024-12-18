@@ -41,7 +41,7 @@ def pilots_data(df):
         TD=('TeamDamage','mean'),
         Games=('MatchID','nunique'),
         Score=('Score','sum')
-    )
+    ).rename(columns={'Username': 'Pilot'})
 
     return pilot_stats
 
@@ -92,11 +92,13 @@ def leaderboard(df):
     end_idx = (1 + page_number) * page_size
     
     pilot_stats = pilot_stats.sort_values(['Score', 'Games', 'MS'], ascending=[False, True, False], ignore_index=True).iloc[start_idx:end_idx]
-
+    pilot_stats['Rank'] = pilot_stats.index + 1
+    
     df_height = 35 * (pilot_stats.shape[0] + 1) + 3
     pilot_stats = pilot_stats.style.format(subset=['Tonnage', 'MS', 'Kills', 'KMDDs', 'Assists', 'CD', 'Deaths', 'DMG', 'TD'], formatter="{:.2f}")
 
-    st.dataframe(pilot_stats, use_container_width=True, height=df_height)
+    column_order = ['Rank', 'Pilot', 'Tonnage', 'MS', 'Kills', 'KMDDs', 'Assists', 'CD', 'Deaths', 'DMG', 'TD', 'Games', 'Score']
+    st.dataframe(pilot_stats, hide_index=True, column_order=column_order, use_container_width=True, height=df_height)
 
 header()
 df, options = filters()

@@ -33,7 +33,7 @@ def recently_added(df):
     unique_matches = df['MatchID'].unique()
     last_10_matches = unique_matches[-10:]
 
-    result = df[df['MatchID'].isin(last_10_matches)]
+    result = df[df['MatchID'].isin(last_10_matches)].copy()
     result['CompleteTime'] = pd.to_datetime(result['CompleteTime'], format='ISO8601')
     
     result = result.sort_values(by=['CompleteTime', 'MatchID', 'MatchResult'], ascending=False).groupby('MatchID').agg(
