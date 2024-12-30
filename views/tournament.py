@@ -42,6 +42,14 @@ def tournament_overview(df, options):
         st.subheader(tournament)
 
         tournament_data = filter_dataframe(df, 'Tournament', tournament)
+
+        metrics = {
+            'Teams': nunique(tournament_data, 'TeamName'),
+            'Players': nunique(tournament_data, 'Username'),
+            'Games': nunique(tournament_data, 'MatchID'),
+        }
+        metrics_block(metrics, 3)
+
         tonnage_order = [i for i in range(20, 105, 5)]
         weight_distribution = tournament_data['Tonnage'].value_counts().reindex(tonnage_order).reset_index()
 

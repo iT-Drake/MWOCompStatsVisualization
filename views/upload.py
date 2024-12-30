@@ -23,7 +23,7 @@ def display_form():
     form = st.form("data_fetching", clear_on_submit=True)
 
     all_rosters = roster_links()
-    tournaments = list(all_rosters.keys())
+    tournaments = [key for key, value in all_rosters.items() if isinstance(value, str) and value]
 
     tournament = form.selectbox('Tournament', tournaments, index=None, placeholder='Tournament', label_visibility='hidden')
 
