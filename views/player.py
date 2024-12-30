@@ -42,7 +42,7 @@ def player_overview(df, options):
 
         games_played = nunique(player_data, 'MatchID')
         score = player_data['Score'].sum()
-
+        
         wins = filter_dataframe(player_data, 'Score', 1).shape[0]
         losses = filter_dataframe(player_data, 'Score', -1).shape[0]
         WLR = safe_division(wins, losses)
@@ -50,16 +50,23 @@ def player_overview(df, options):
         kills = player_data['Kills'].sum()
         deaths = player_data[player_data['HealthPercentage'] == 0].shape[0]
         KDR = safe_division(kills, deaths)
+        
+        kmdds = player_data['KillsMostDamage'].sum()
+        damage = player_data['Damage'].sum()
 
-        col1, col2 = st.columns([2, 1])
+        col1, col2 = st.columns([4, 2])
         with col1:
             metrics = {
                 'Games played': games_played,
                 'Win/Loss ratio': f'{WLR:.2f}',
+                'Kills': kills,
+                'KMDDs': kmdds,
                 'Score': score,
-                'Kills/Deaths ratio': f'{KDR:.2f}'
+                'Kills/Deaths ratio': f'{KDR:.2f}',
+                'Deaths': deaths,
+                'Damage': damage
             }
-            metrics_block(metrics, columns=2)
+            metrics_block(metrics, columns=4)
 
         weight_class_order = ['LIGHT', 'MEDIUM', 'HEAVY', 'ASSAULT']
         class_distribution = player_data.groupby('Class')['Class'].value_counts().reindex(weight_class_order).reset_index()

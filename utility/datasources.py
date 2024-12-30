@@ -31,12 +31,16 @@ def mech_data():
 
 @st.cache_data(ttl=CACHE_TTL)
 def team_rosters(url):
+    result = {}
+    if not url:
+        error(f"An empty rosters URL provided.")
+        return result
+
     try:
         df = pd.read_csv(url)
         zipped_data = zip(df['Pilot'].str.upper(), df['Team'], df['Division'])
         result = {item[0]: {'Team': item[1], 'Division': item[2]} for item in zipped_data}
     except Exception as e:
         error(f"An error occurred while fetching team rosters:\n{e}")
-        result = {}
     
     return result

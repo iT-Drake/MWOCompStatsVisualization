@@ -1,5 +1,4 @@
 import streamlit as st
-import pandas as pd
 
 def error(message, header='Error'):
     st.error(header, icon=':material/error:')

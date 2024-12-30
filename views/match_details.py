@@ -70,7 +70,7 @@ def display_inputs():
             'Region': match_details['Region'],
             'Mode': match_details['GameMode'],
             'Date': datetime.fromisoformat(match_details['CompleteTime']).strftime("%Y-%m-%d %H:%M:%S"),
-            'Duration': f"{dur_min}:{dur_sec}",
+            'Duration': f"{dur_min:02d}:{dur_sec:02d}",
             'Winner': f"Team {match_details['WinningTeam']}"
         }
         metrics_block(metrics, 3)
@@ -83,10 +83,11 @@ def display_inputs():
             if line['IsSpectator'] == True:
                 spectators.append(line['Username'])
             else:
+                mech = mechs[line['MechItemID']]['Mech'] if line['MechItemID'] else 'NONE'
                 player = {
                     "Tag": f"[{line['UnitTag']}]" if line['UnitTag'] else '',
                     "Pilot": line['Username'],
-                    "Mech": mechs[line['MechItemID']]['Mech'],
+                    "Mech": mech,
                     "Health": "DEAD" if line['HealthPercentage'] == 0 else f"{line['HealthPercentage']}%",
                     "Score": line['MatchScore'],
                     "Damage": line['Damage'],
