@@ -19,6 +19,7 @@ def get_sorting_settings():
     value = get_leaderboard_default_sorting()
     match value:
         case SortingOption.Score: return ['Score', 'Games', 'MS'], [False, True, False]
+        case SortingOption.WLR: return ['WLR', 'Games', 'MS'], [False, False, False]
         case SortingOption.AdjustedWLR: return ['AWLR', 'Games', 'MS'], [False, False, False]
         case SortingOption.MatchScore: return ['MS', 'Games'], [False, True]
         case SortingOption.Damage: return ['DMG', 'Games', 'MS'], [False, True, False]
