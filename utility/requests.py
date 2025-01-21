@@ -109,6 +109,9 @@ def request_match_data(match_id, tournament):
     return df
 
 def batch_request(match_ids, tournament):
+    # Removing duplicate IDs
+    match_ids = list(dict.fromkeys(match_ids))
+
     unique_ids = unique_match_ids()
 
     for match_id in match_ids:
@@ -119,7 +122,7 @@ def batch_request(match_ids, tournament):
         df = request_match_data(match_id, tournament)
         write_comp_data(df)
 
-        unique_ids.append(match_id)
+        unique_ids.append(id)
 
         # API calls limited by 60 per minute
         sleep(1)

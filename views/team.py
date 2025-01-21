@@ -55,7 +55,7 @@ def team_mech_statistics(df):
         bar_chart(class_distribution, 'Weight class distribution', 'Class', 'count'), use_container_width=True)
 
 def team_statistics(df, options):
-    mechs, maps, rosters = st.tabs(['Mechs', 'Maps', 'Rosters'])
+    mechs, maps, rosters, tournaments = st.tabs(['Mechs', 'Maps', 'Rosters', 'Tournaments'])
     with mechs:
         teams = options['TeamName']
         for team in teams:
@@ -105,17 +105,22 @@ def team_statistics(df, options):
 
         pilot_stats = pilot_stats.style.format(subset=['Score', 'Tonnage', 'Kills', 'KMDDs', 'Assists', 'CDs', 'Deaths', 'DMG', 'TD'], formatter="{:.2f}")
         st.dataframe(pilot_stats, hide_index=True, use_container_width=True, height=df_height)
+    
+    with tournaments:
+        divisions = df[['Tournament', 'TeamName', 'Division']].drop_duplicates()
+        df_height = 35 * (divisions.shape[0] + 1) + 3
+        st.dataframe(divisions, hide_index=True, use_container_width=True, height=df_height)
 
 def general_statistics(df, options):
     tournaments_count = nunique(df, 'Tournament')
     teams_count = nunique(df, 'TeamName')
 
-    groupped_data = df.groupby('TeamName')
-
-    score_sum = groupped_data['Score'].sum()
+    team_data = df[['MatchID', 'TeamName', 'Score']].drop_duplicates()
+    score_sum = team_data.groupby('TeamName')['Score'].sum()
     score_team = score_sum.idxmax()
     score_value = int(score_sum.max())
 
+    groupped_data = df.groupby('TeamName')
     kills_sum = groupped_data['Kills'].sum()
     kills_team = kills_sum.idxmax()
     kills_value = int(kills_sum.max())

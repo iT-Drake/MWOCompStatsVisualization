@@ -11,7 +11,7 @@ def header():
 
 def filters():
     df = read_comp_data()
-    options = {'Tournament': None}
+    options = {'Tournament': None, 'Division': None}
     return filters_block(df, options)
 
 def general_statistics(df, options):
