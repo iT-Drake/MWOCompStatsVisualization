@@ -87,7 +87,7 @@ Data returned by PGI's API contains only mech id and original name without any i
 | 57      | com-tdk       | COM-TDK | COM     | 25      | LIGHT   | HERO    |
 
 You can find current official list of all mechs in JSON format at [mwomercs](https://static.mwomercs.com/api/mechs/list/dict.json).
-And a template file with data from NOV 2024 [here](data/mechdata.csv).
+And a template file with data from DEC 2024 [here](examples/mechdata.csv).
 
 #### Team rosters
 
@@ -98,7 +98,7 @@ For scalability purpuses, rosters data have two parts:
     |------------|------------------------------------------------------------------------------------------------|
     | CS24       | https://docs.google.com/spreadsheets/d/<YOUR_DOCUMENT_ID>/export?format=csv&gid=<YOUR_PAGE_ID> |
 
-1. Actual rosters file that contains information about team and division a pilot belongs to. You need that information because PGI's API data doesn't contain no details besides pilot name and map side they started at. File structure is the following:
+2. Actual rosters file that contains information about team and division a pilot belongs to. You need that information because PGI's API data doesn't contain no details besides pilot name and map side they started at. File structure is the following:
 
     | Pilot | Team      | Division |
     |-------|-----------|----------|
@@ -111,5 +111,5 @@ For scalability purpuses, rosters data have two parts:
 [license-shield]: https://img.shields.io/github/license/iT-Drake/MWOCompStatsVisualization.svg?style=for-the-badge
 [license-url]: https://github.com/iT-Drake/MWOCompStatsVisualization/blob/main/LICENSE
 
-[version-shield]: https://img.shields.io/badge/Version-0.2.3-blue?style=for-the-badge
+[version-shield]: https://img.shields.io/badge/Version-0.3.0-blue?style=for-the-badge
 [version-url]: https://github.com/iT-Drake/MWOCompStatsVisualization

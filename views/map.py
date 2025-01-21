@@ -113,14 +113,24 @@ def map_mechs(df, map):
     st.divider()
 
 def map_tournaments(df, map):
-    win_percentage = df.groupby(['Tournament', 'Team'])['MatchResult'].apply(
-        lambda x: (x == 'WIN').sum() / len(x) if len(x) > 0 else 0
-    ).reset_index()
+    map_data = df[['MatchID', 'Tournament', 'Team', 'MatchResult']].drop_duplicates()
 
-    chart = alt.Chart(win_percentage).mark_bar().encode(
-        x=alt.X('MatchResult:Q', axis=alt.Axis(format='.0%'), title='Win rate'),
+    map_data = map_data.groupby(['Tournament', 'Team'])['MatchResult'].agg([
+        ('Wins', lambda x: (x == 'WIN').sum()),
+        ('Total', 'count')
+    ]).copy().reset_index()
+    map_data['WinRate'] = map_data['Wins'] / map_data['Total']
+
+    chart = alt.Chart(map_data).mark_bar().encode(
+        x=alt.X('WinRate:Q', axis=alt.Axis(format='.0%'), title='Win rate'),
         y=alt.Y('Tournament:N', sort='-x'),
-        color='Team:N'
+        color='Team:N',
+        tooltip=[
+            alt.Tooltip(f'Tournament:N', title='Tournament'),
+            alt.Tooltip(f'Team:N', title='Team'),
+            alt.Tooltip(f'Total:Q', title='Games'),
+            alt.Tooltip(f'WinRate:Q', title='Win rate', format='.0%')
+        ]
     ).properties(
         title=map
     )

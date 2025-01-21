@@ -11,7 +11,4 @@ if st.button('Team and pilot renaming >'):
 if st.button('Check for new mechs >'):
     st.switch_page('views/new_mechs.py')
 
-if st.button('Match details >'):
-    st.switch_page('views/match_details.py')
-
 # Intentional backup page

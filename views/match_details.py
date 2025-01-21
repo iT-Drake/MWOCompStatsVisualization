@@ -23,7 +23,7 @@ def spectators_block(spectators):
         index = 0
         for item in spectators:
             column = columns[index]
-            column.write(item)
+            column.subheader(item)
             index += 1
 
         st.divider()

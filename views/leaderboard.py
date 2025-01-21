@@ -12,7 +12,7 @@ def header():
 
 def filters():
     df = read_comp_data()
-    options = {'Tournament': None, 'Division': None, 'TeamName': 'Team'}
+    options = {'Tournament': None, 'Division': None, 'TeamName': 'Team', 'Username': 'Player'}
     return filters_block(df, options)
 
 def get_sorting_settings():
