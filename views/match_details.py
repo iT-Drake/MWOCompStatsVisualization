@@ -8,10 +8,6 @@ from utility.blocks import metrics_block
 
 from datetime import datetime
 
-def back_button():
-    if st.button('< Back'):
-        st.switch_page('views/admin.py')
-
 def header():
     st.header('API Data')
 
@@ -98,6 +94,5 @@ def display_inputs():
         spectators_block(spectators)
         teams_block(teams, team1_score, team2_score)
 
-back_button()
 header()
 display_inputs()
