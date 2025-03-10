@@ -5,6 +5,7 @@ from utility.database import read_comp_data
 from utility.methods import nunique, filter_dataframe, safe_division
 from utility.charts import bar_chart
 from utility.blocks import filters_block, metrics_block, charts_block
+from utility.requests import jarls_pilot_overview_link, jarls_pilot_stats
 
 def header():
     st.header('Players')
@@ -36,8 +37,10 @@ def general_statistics(df, options):
 
 def player_overview(df, options):
     for player in options['Username']:
-        st.subheader(player)
-
+        pilot_stats = jarls_pilot_stats(player)
+        rank = pilot_stats['Rank'] if pilot_stats else ""
+        st.markdown(f"### {player} / Rank: {rank} ([jarls]({jarls_pilot_overview_link(player)}))")
+        
         player_data = filter_dataframe(df, 'Username', player)
 
         games_played = nunique(player_data, 'MatchID')

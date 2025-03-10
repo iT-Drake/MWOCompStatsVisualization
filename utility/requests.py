@@ -1,11 +1,16 @@
 import requests
 import pandas as pd
 from time import sleep
+from streamlit import cache_data
 
 from utility.datasources import mech_data, roster_links, team_rosters
 from utility.database import unique_match_ids, write_comp_data
 from utility.methods import error, convert_to_int
 from utility.globals import API_URL, API_KEY
+
+#---------------------------------------------------------------------
+# MWO API
+#---------------------------------------------------------------------
 
 def match_data_columns():
     return ['MatchID', 'Tournament', 'Division', 'Map', 'WinningTeam', 'Team1Score', 'Team2Score', 'MatchDuration', 'CompleteTime', 'MatchResult', 'Score',
@@ -136,5 +141,34 @@ def mech_list():
         result = json_data['Mechs']
     else:
         result = {'error': f"Error fetching mech list:\nCode={response.status_code},Text={response.text}"}
+
+    return result
+
+#---------------------------------------------------------------------
+# JARL'S LIST API
+#---------------------------------------------------------------------
+
+def jarls_pilot_overview_link(pilot):
+    return f"https://leaderboard.isengrim.org/search?u={pilot.replace(' ', '+')}"
+
+@cache_data(ttl=300)
+def jarls_pilot_stats(pilot):
+    url = f'https://leaderboard.isengrim.org/api/usernames/{pilot}'
+    result = {}
+    try:
+        response = requests.get(url)
+        if response.status_code == 200:
+            result = response.json()
+            if not result['Rank']:
+                last_season_url = f"https://leaderboard.isengrim.org/api/usernames/{pilot}/seasons/{result['LastSeason']}"
+                response = requests.get(last_season_url)
+                if response.status_code == 200:
+                    result = response.json()
+                else:
+                    error(f"Error fetching pilot's last season details: {pilot}\nCode={response.status_code},Text={response.text}") 
+        else:
+            error(f"Error fetching pilot stats for: {pilot}\nCode={response.status_code},Text={response.text}")
+    except Exception as e:
+        error(f"Error fetching pilot stats for: {pilot}\n{e}")
 
     return result

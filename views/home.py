@@ -16,7 +16,7 @@ def general_statistics(df):
     players = nunique(df, 'Username')
     games = nunique(df, 'MatchID')
 
-    start_date = pd.to_datetime(df['CompleteTime'].iloc[0], format='ISO8601').strftime("%Y-%m-%d")
+    start_date = pd.to_datetime(df['CompleteTime'].iloc[0], format='ISO8601').strftime("%Y-%m-%d") if df.size > 0 else "--/--/----"
 
     metrics = {
         'Tournaments': tournaments,
