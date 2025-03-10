@@ -17,11 +17,12 @@ admin_page = st.Page('views/admin.py', title=' ')
 upload_page = st.Page('views/upload.py', title=' ')
 renaming_page = st.Page('views/renaming.py', title=' ')
 new_mechs_page = st.Page('views/new_mechs.py', title=' ')
+compare_tool_page = st.Page('views/compare_tool.py', title=' ')
 
 navigation = st.navigation({
     "Statistics": [home_page, tournament_page, leaderboard_page, team_page, player_page, map_page],
     "Data": [download_page, match_details_page],
-    "Settings": [settings_page, admin_page, upload_page, renaming_page, new_mechs_page]
+    "Settings": [settings_page, admin_page, upload_page, renaming_page, new_mechs_page, compare_tool_page]
 })
 
 navigation.run()

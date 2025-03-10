@@ -11,4 +11,7 @@ if st.button('Team and pilot renaming >'):
 if st.button('Check for new mechs >'):
     st.switch_page('views/new_mechs.py')
 
+if st.button('Compare rosters >'):
+    st.switch_page('views/compare_tool.py')
+
 # Intentional backup page
