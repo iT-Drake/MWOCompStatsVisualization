@@ -29,8 +29,8 @@ def display_inputs():
     if not st.button('Compare', use_container_width=True):
         st.markdown("#### Each pilot name should be on a new line.\n#### Error will be displayed if pilot wasn't found on Jarl's list.")
     else:
-        team1_pilots = [pilot.strip().lower() for pilot in team1.splitlines()]
-        team2_pilots = [pilot.strip().lower() for pilot in team2.splitlines()]
+        team1_pilots = [pilot.strip().lower() for pilot in team1.splitlines() if pilot]
+        team2_pilots = [pilot.strip().lower() for pilot in team2.splitlines() if pilot]
         
         col1, col2 = st.columns(2)
         
@@ -56,15 +56,17 @@ def display_stats(container, pilots, df):
     }
     for pilot in pilots:
         pilot_stats = jarls_pilot_stats(pilot)
-        if not pilot_stats:
-            continue
-
-        team_data['Pilot'].append(pilot_stats['PilotName'])
-        team_data['Rank'].append(pilot_stats['Rank'])
-    
+        
         pilot_data = pilots_data[pilots_data['Username'].str.lower() == pilot.lower()].copy()
         division, confidence = calculate_pilot_division(pilot_data)
         comp_games = nunique(pilot_data, 'MatchID')
+        
+        if pilot_stats:
+            team_data['Pilot'].append(pilot_stats['PilotName'])
+            team_data['Rank'].append(pilot_stats['Rank'])
+        else:
+            team_data['Pilot'].append(pilot)
+            team_data['Rank'].append(0)
         team_data['CompGames'].append(comp_games)
 
         if comp_games:
@@ -154,6 +156,5 @@ def weights_range(start, stop, count):
 def decode_division(division):
     return DIVISION_DECODING[int(round(division))] if division > 0 else "--"
 
-back_button()
 header()
 display_inputs()

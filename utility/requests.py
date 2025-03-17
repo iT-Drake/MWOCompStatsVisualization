@@ -167,7 +167,10 @@ def jarls_pilot_stats(pilot):
                 else:
                     error(f"Error fetching pilot's last season details: {pilot}\nCode={response.status_code},Text={response.text}") 
         else:
-            error(f"Error fetching pilot stats for: {pilot}\nCode={response.status_code},Text={response.text}")
+            if response.status_code == 404:
+                error(f"Pilot {pilot} was not found on Jarl's list.")
+            else:
+                error(f"Error fetching pilot stats for: {pilot}\nCode={response.status_code},Text={response.text}")
     except Exception as e:
         error(f"Error fetching pilot stats for: {pilot}\n{e}")
 
