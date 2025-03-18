@@ -154,7 +154,11 @@ def weights_range(start, stop, count):
     return np.linspace(start, stop, num=count)
 
 def decode_division(division):
-    return DIVISION_DECODING[int(round(division))] if division > 0 else "--"
+    if division > 0:
+        estimated_div = int(round(division))
+        return DIVISION_DECODING[estimated_div] if estimated_div > 0 else "A+"
+    else:
+        return "--"
 
 header()
 display_inputs()
