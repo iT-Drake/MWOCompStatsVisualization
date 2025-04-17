@@ -1,15 +1,7 @@
 import streamlit as st
-import re
 
 from utility.requests import roster_links, batch_request
-from utility.methods import error
-
-def parse_match_ids(submitted_text):
-    if not submitted_text:
-        return []
-    
-    pattern = r'[^\d]*(\d{6,})[^\d]*'
-    return re.findall(pattern, submitted_text)
+from utility.methods import error, parse_match_ids
 
 def back_button():
     if st.button('< Back'):
