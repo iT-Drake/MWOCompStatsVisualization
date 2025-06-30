@@ -87,7 +87,7 @@ Data returned by PGI's API contains only mech id and original name without any i
 | 57      | com-tdk       | COM-TDK | COM     | 25      | LIGHT   | HERO    |
 
 You can find current official list of all mechs in JSON format at [mwomercs](https://static.mwomercs.com/api/mechs/list/dict.json).
-And a template file with data from DEC 2024 [here](examples/mechdata.csv).
+And a template file with data from JUN 2025 [here](examples/mechdata.csv).
 
 #### Team rosters
 
@@ -111,5 +111,5 @@ For scalability purpuses, rosters data have two parts:
 [license-shield]: https://img.shields.io/github/license/iT-Drake/MWOCompStatsVisualization.svg?style=for-the-badge
 [license-url]: https://github.com/iT-Drake/MWOCompStatsVisualization/blob/main/LICENSE
 
-[version-shield]: https://img.shields.io/badge/Version-0.3.2-blue?style=for-the-badge
+[version-shield]: https://img.shields.io/badge/Version-0.4.0-blue?style=for-the-badge
 [version-url]: https://github.com/iT-Drake/MWOCompStatsVisualization
