@@ -92,7 +92,7 @@ def leaderboard(df):
 
     col1, _ , col2, col3, col4 = st.columns([4, 2, 1, 1, 1])
     with col1:
-        with st.expander("Column descriptions:"):
+        with st.popover("Column descriptions:", use_container_width=True):
             st.markdown('''
                 - `Tonnage`: Average mech tonnage
                 - `MS`: Match Score (avg.)
