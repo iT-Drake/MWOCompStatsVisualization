@@ -83,7 +83,8 @@ def display_match_details(match_id):
                 "Health": "DEAD" if line['HealthPercentage'] == 0 else f"{line['HealthPercentage']}%",
                 "Score": line['MatchScore'],
                 "Damage": line['Damage'],
-                "Kills": line['Kills']
+                "Kills": line['Kills'],
+                "TD": line['TeamDamage']
             }
             teams[line['Team']].append(player)
 
