@@ -41,7 +41,7 @@ def mechs_data(df):
         WLR=('MatchResult', lambda values: calculate_wlr(values)),
         TotalKills=('Kills', 'sum'),
         TotalDeaths=('Deaths', 'sum'),
-        Games=('MatchID','nunique'),
+        Uses=('MatchID','count'),
         Score=('Score','sum')
     )
     mech_stats['KDR'] = calculate_kdr(mech_stats['TotalKills'], mech_stats['TotalDeaths'].copy())
@@ -67,7 +67,7 @@ def mech_statistics(df, options):
     merged_data = all_mechs.merge(mech_stats, on='Mech', how='left')
     merged_data.fillna(0, inplace=True)
 
-    merged_data['Games'] = merged_data['Games'].astype(int)
+    merged_data['Uses'] = merged_data['Uses'].astype(int)
     merged_data['Score'] = merged_data['Score'].astype(int)
 
     with st.popover("Column descriptions:", use_container_width=True):
@@ -83,18 +83,18 @@ def mech_statistics(df, options):
             - `DMG`: Damage Dealt (avg.)
             - `TD`: Team Damage (avg.)
             - `WLR`: Wins to Losses ratio
-            - `Games`: Total games played
+            - `Uses`: Total use count
             - `Score`: Calculated by subtracting lost games from the games won
         ''')
     
     # Sorting dataset
-    merged_data = merged_data.sort_values(['Score', 'Games', 'MS'], ascending=[False, True, False], ignore_index=True)
+    merged_data = merged_data.sort_values(['Score', 'Uses', 'MS'], ascending=[False, True, False], ignore_index=True)
 
     merged_data['Rank'] = merged_data.index + 1
     df_height = 35 * (merged_data.shape[0] + 1) + 3
 
     merged_data = merged_data.style.format(subset=['Tonnage', 'MS', 'Kills', 'KMDDs', 'Assists', 'CD', 'Deaths', 'DMG', 'TD', 'WLR', 'KDR'], formatter="{:.2f}")
-    column_order = ['Rank', 'Mech', 'Tonnage', 'MS', 'Kills', 'KMDDs', 'Assists', 'CD', 'Deaths', 'KDR', 'DMG', 'TD', 'WLR', 'Games', 'Score']
+    column_order = ['Rank', 'Mech', 'Tonnage', 'MS', 'Kills', 'KMDDs', 'Assists', 'CD', 'Deaths', 'KDR', 'DMG', 'TD', 'WLR', 'Uses', 'Score']
 
     st.dataframe(merged_data, hide_index=True, column_order=column_order, use_container_width=True, height=df_height)
 
