@@ -17,6 +17,49 @@ def match_data_columns():
         'Username', 'Team', 'TeamName', 'Lance', 'MechItemID', 'Mech', 'Chassis', 'Tonnage', 'Class', 'Type',
         'HealthPercentage', 'Kills', 'KillsMostDamage', 'Assists', 'ComponentsDestroyed', 'MatchScore', 'Damage', 'TeamDamage']
 
+def new_record(data):
+    id = data['id']
+    tournament = data['tournament']
+    division = data['division']
+    pilot = data['pilot']
+    team = data['team']
+    mech = data['mech']
+    match = data['match']
+    details = data['details']
+
+    new_record = {}
+    new_record['MatchID'] = id
+    new_record['Tournament'] = tournament
+    new_record['Division'] = division
+    new_record['Map'] = match['Map']
+    new_record['WinningTeam'] = match['WinningTeam']
+    new_record['Team1Score'] = match['Team1Score']
+    new_record['Team2Score'] = match['Team2Score']
+    new_record['MatchDuration'] = match['MatchDuration']
+    new_record['CompleteTime'] = match['CompleteTime']
+    new_record['MatchResult'] = 'WIN' if details['Team'] == match['WinningTeam'] else 'LOSS'
+    new_record['Score'] = 1 if details['Team'] == match['WinningTeam'] else -1
+    new_record['Username'] = pilot
+    new_record['Team'] = details['Team']
+    new_record['TeamName'] = team
+    new_record['Lance'] = details['Lance']
+    new_record['MechItemID'] = mech['ID']
+    new_record['Mech'] = mech['Mech']
+    new_record['Chassis'] = mech['Chassis']
+    new_record['Tonnage'] = mech['Tonnage']
+    new_record['Class'] = mech['Class']
+    new_record['Type'] = mech['Type']
+    new_record['HealthPercentage'] = details['HealthPercentage']
+    new_record['Kills'] = details['Kills']
+    new_record['KillsMostDamage'] = details['KillsMostDamage']
+    new_record['Assists'] = details['Assists']
+    new_record['ComponentsDestroyed'] = details['ComponentsDestroyed']
+    new_record['MatchScore'] = details['MatchScore']
+    new_record['Damage'] = details['Damage']
+    new_record['TeamDamage'] = details['TeamDamage']
+
+    return new_record
+
 def match_data(id, match_details, user_details, tournament):
     lines = []
     mechs = mech_data()
@@ -46,36 +89,17 @@ def match_data(id, match_details, user_details, tournament):
         if not division:
             raise Exception(f"Empty division on a roster for a pilot `{pilot}`")
 
-        new_line = {}
-        new_line['MatchID'] = id
-        new_line['Tournament'] = tournament
-        new_line['Division'] = division
-        new_line['Map'] = match_details['Map']
-        new_line['WinningTeam'] = match_details['WinningTeam']
-        new_line['Team1Score'] = match_details['Team1Score']
-        new_line['Team2Score'] = match_details['Team2Score']
-        new_line['MatchDuration'] = match_details['MatchDuration']
-        new_line['CompleteTime'] = match_details['CompleteTime']
-        new_line['MatchResult'] = 'WIN' if line['Team'] == match_details['WinningTeam'] else 'LOSS'
-        new_line['Score'] = 1 if line['Team'] == match_details['WinningTeam'] else -1
-        new_line['Username'] = pilot
-        new_line['Team'] = line['Team']
-        new_line['TeamName'] = team
-        new_line['Lance'] = line['Lance']
-        new_line['MechItemID'] = mech_id
-        new_line['Mech'] = mech['Mech']
-        new_line['Chassis'] = mech['Chassis']
-        new_line['Tonnage'] = mech['Tonnage']
-        new_line['Class'] = mech['Class']
-        new_line['Type'] = mech['Type']
-        new_line['HealthPercentage'] = line['HealthPercentage']
-        new_line['Kills'] = line['Kills']
-        new_line['KillsMostDamage'] = line['KillsMostDamage']
-        new_line['Assists'] = line['Assists']
-        new_line['ComponentsDestroyed'] = line['ComponentsDestroyed']
-        new_line['MatchScore'] = line['MatchScore']
-        new_line['Damage'] = line['Damage']
-        new_line['TeamDamage'] = line['TeamDamage']
+        data = {
+            'id': id,
+            'tournament': tournament,
+            'division': division,
+            'pilot': pilot,
+            'team': team,
+            'mech': mech,
+            'match': match_details,
+            'details': line
+        }
+        new_line = new_record(data)
         lines.append(new_line)
     
     return lines
