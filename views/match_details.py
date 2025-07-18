@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 
 from utility.methods import error, parse_match_ids
-from utility.requests import fetch_api_data
+from utility.requests import fetch_api_data, new_record, match_data_columns
 from utility.datasources import mech_data
 from utility.blocks import metrics_block
 
@@ -43,20 +43,16 @@ def teams_block(teams, team1_score, team2_score):
             st.dataframe(df, hide_index=True, use_container_width=True)
         index += 1
 
-def display_match_details(match_id):
-    json_data = fetch_api_data(match_id)
-    if not json_data:
-        st.stop()
-
-    match_details = json_data['MatchDetails']
-    user_details = json_data['UserDetails']
+def display_match_details(id, details):
+    match_details = details['MatchDetails']
+    user_details = details['UserDetails']
     
     team1_score = match_details['Team1Score']
     team2_score = match_details['Team2Score']
     dur_min, dur_sec = divmod(int(match_details['MatchDuration']), 60)
 
     metrics = {
-        'ID': match_id,
+        'ID': id,
         'Map': match_details['Map'],
         'Mode': match_details['GameMode'],
         'Region': match_details['Region'],
@@ -91,6 +87,61 @@ def display_match_details(match_id):
     spectators_block(spectators)
     teams_block(teams, team1_score, team2_score)
 
+def get_match_details(id_list):
+    result = {}
+    for match_id in id_list:
+        json_data = fetch_api_data(match_id)
+        if not json_data:
+            st.stop()
+        result[match_id] = json_data
+
+    return result
+
+def json2df(json_list):
+    lines = []
+    mechs = mech_data()
+
+    for id, json_data in json_list.items():
+        match_details = json_data['MatchDetails']
+        user_details = json_data['UserDetails']
+        for line in user_details:
+            if line['IsSpectator'] == True or line['MechItemID'] == 0:
+                continue
+
+            mech_id = line['MechItemID']
+            if mech_id not in mechs:
+                raise Exception(f'Mech with id `{mech_id}` not found')
+            mech = mechs[mech_id]
+
+            data = {
+                'id': id,
+                'tournament': "",
+                'division': "",
+                'pilot': line['Username'],
+                'team': "",
+                'mech': mech,
+                'match': match_details,
+                'details': line
+            }
+            new_line = new_record(data)
+            lines.append(new_line)
+    
+    df = pd.DataFrame(lines)
+    df.columns = match_data_columns()
+    return df
+
+def download_button(details_list):
+    df = json2df(details_list)
+    csv = df.to_csv(index=False).encode('utf-8')
+    st.download_button(
+        label="Download data as CSV",
+        data=csv,
+        file_name="data_dump.csv",
+        mime='text/csv',
+        type='primary',
+        use_container_width=True
+    )
+
 def display_inputs():
     match_ids = st.text_input('Enter match id', value=None, placeholder='Enter match ID', label_visibility='hidden')
     button_pressed = st.button('Submit', use_container_width=True)
@@ -99,8 +150,10 @@ def display_inputs():
         error('Please, specify match ID to fetch data for.')
     elif button_pressed:
         id_list = parse_match_ids(match_ids)
-        for match_id in id_list:
-            display_match_details(match_id)
+        details_list = get_match_details(id_list)
+        download_button(details_list)
+        for id, details in details_list.items():
+            display_match_details(id, details)
 
 header()
 display_inputs()

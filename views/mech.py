@@ -28,7 +28,7 @@ def mechs_data(df):
 
     df['Deaths'] = [1 if health == 0 else 0 for health in df['HealthPercentage']]
     
-    mech_stats = df.groupby(['Mech'], as_index=False).agg(
+    mech_stats = df.groupby(['Mech', 'Chassis'], as_index=False).agg(
         Tonnage=('Tonnage', 'mean'),
         MS=('MatchScore', aggregation_method),
         Kills=('Kills', aggregation_method),
@@ -55,16 +55,16 @@ def get_full_list(options):
             and (not options['Mech'] or value['Mech'] in options['Mech'])
     
     data = mech_data()
-    all_mechs = [value['Mech'] for _, value in data.items() if match_filters(value, options)]
+    all_mechs = [[value['Mech'], value['Chassis']] for _, value in data.items() if match_filters(value, options)]
 
-    df = pd.DataFrame(all_mechs, columns=['Mech'])
-    return df.drop_duplicates(subset='Mech')
+    df = pd.DataFrame(all_mechs, columns=['Mech', 'Chassis'])
+    return df.drop_duplicates(subset=['Mech', 'Chassis'])
 
 def mech_statistics(df, options):
     all_mechs = get_full_list(options)
     mech_stats = mechs_data(df)
 
-    merged_data = all_mechs.merge(mech_stats, on='Mech', how='left')
+    merged_data = all_mechs.merge(mech_stats, on=['Mech', 'Chassis'], how='left')
     merged_data.fillna(0, inplace=True)
 
     merged_data['Uses'] = merged_data['Uses'].astype(int)
@@ -94,7 +94,7 @@ def mech_statistics(df, options):
     df_height = 35 * (merged_data.shape[0] + 1) + 3
 
     merged_data = merged_data.style.format(subset=['Tonnage', 'MS', 'Kills', 'KMDDs', 'Assists', 'CD', 'Deaths', 'DMG', 'TD', 'WLR', 'KDR'], formatter="{:.2f}")
-    column_order = ['Rank', 'Mech', 'Tonnage', 'MS', 'Kills', 'KMDDs', 'Assists', 'CD', 'Deaths', 'KDR', 'DMG', 'TD', 'WLR', 'Uses', 'Score']
+    column_order = ['Rank', 'Mech', 'Chassis', 'Tonnage', 'MS', 'Kills', 'KMDDs', 'Assists', 'CD', 'Deaths', 'KDR', 'DMG', 'TD', 'WLR', 'Uses', 'Score']
 
     st.dataframe(merged_data, hide_index=True, column_order=column_order, use_container_width=True, height=df_height)
 

@@ -22,7 +22,7 @@ def mech_data():
     try:
         df = pd.read_csv(MECH_DATA_URL)
         zipped_data = zip(df['ItemID'], df['Name'], df['Chassis'], df['Tonnage'], df['Class'], df['Type'])
-        result = {item[0]:{'Mech': item[1], 'Chassis': item[2], 'Tonnage': item[3], 'Class': item[4], 'Type': item[5]} for item in zipped_data}
+        result = {item[0]:{'ID': item[0], 'Mech': item[1], 'Chassis': item[2], 'Tonnage': item[3], 'Class': item[4], 'Type': item[5]} for item in zipped_data}
     except Exception as e:
         error(f"An error occurred while fetching mech data:\n{e}")
         result = {}
