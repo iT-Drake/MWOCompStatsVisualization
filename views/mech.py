@@ -60,6 +60,20 @@ def get_full_list(options):
     df = pd.DataFrame(all_mechs, columns=['Mech', 'Chassis'])
     return df.drop_duplicates(subset=['Mech', 'Chassis'])
 
+def get_page_number(last_page):
+    if 'mech_page_number' not in st.session_state:
+        page_number = 0
+    else:
+        page_number = st.session_state['mech_page_number']
+
+    if page_number > last_page:
+        page_number = 0
+
+    return page_number
+
+def set_page_number(new_value):
+    st.session_state['mech_page_number'] = new_value
+
 def mech_statistics(df, options):
     all_mechs = get_full_list(options)
     mech_stats = mechs_data(df)
@@ -70,25 +84,55 @@ def mech_statistics(df, options):
     merged_data['Uses'] = merged_data['Uses'].astype(int)
     merged_data['Score'] = merged_data['Score'].astype(int)
 
-    with st.popover("Column descriptions:", use_container_width=True):
-        st.markdown('''
-            - `Tonnage`: Mech tonnage
-            - `MS`: Match Score (avg.)
-            - `Kills`: Kills (avg.)
-            - `KMDDs`: Kills Most Damage Dealt (avg.)
-            - `Assists`: Assists (avg.)
-            - `CDs`: Components Destroyed (avg.)
-            - `Deaths`: Deaths (avg.)
-            - `KDR`: Kills to Deaths ratio
-            - `DMG`: Damage Dealt (avg.)
-            - `TD`: Team Damage (avg.)
-            - `WLR`: Wins to Losses ratio
-            - `Uses`: Total use count
-            - `Score`: Calculated by subtracting lost games from the games won
-        ''')
+    page_size = 100
+    last_page = merged_data.shape[0] // page_size
+    page_number = get_page_number(last_page)
+
+    col1, col2, col3, col4 = st.columns([3, 1, 1, 1])
+
+    with col1:
+        with st.popover("Column descriptions:", use_container_width=True):
+            st.markdown('''
+                - `Tonnage`: Mech tonnage
+                - `MS`: Match Score (avg.)
+                - `Kills`: Kills (avg.)
+                - `KMDDs`: Kills Most Damage Dealt (avg.)
+                - `Assists`: Assists (avg.)
+                - `CDs`: Components Destroyed (avg.)
+                - `Deaths`: Deaths (avg.)
+                - `KDR`: Kills to Deaths ratio
+                - `DMG`: Damage Dealt (avg.)
+                - `TD`: Team Damage (avg.)
+                - `WLR`: Wins to Losses ratio
+                - `Uses`: Total use count
+                - `Score`: Calculated by subtracting lost games from the games won
+            ''')
+
+    with col2:
+        if st.button("Previous", use_container_width=True):
+            if page_number - 1 < 0:
+                page_number = last_page
+            else:
+                page_number -= 1
+
+    with col4:
+        if st.button("Next", use_container_width=True):
+            if page_number + 1 > last_page:
+                page_number = 0
+            else:
+                page_number += 1
+
+    set_page_number(page_number)
     
+    with col3:
+        st.markdown(f'<p style="text-align:center;">{page_number + 1} / {last_page + 1}</p>', unsafe_allow_html=True)
+    
+    # Rows to display
+    start_idx = page_number * page_size 
+    end_idx = (1 + page_number) * page_size
+
     # Sorting dataset
-    merged_data = merged_data.sort_values(['Score', 'Uses', 'MS'], ascending=[False, True, False], ignore_index=True)
+    merged_data = merged_data.sort_values(['Score', 'Uses', 'MS'], ascending=[False, True, False], ignore_index=True).iloc[start_idx:end_idx]
 
     merged_data['Rank'] = merged_data.index + 1
     df_height = 35 * (merged_data.shape[0] + 1) + 3
