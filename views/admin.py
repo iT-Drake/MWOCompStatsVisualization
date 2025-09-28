@@ -14,4 +14,7 @@ if st.button('Check for new mechs >'):
 if st.button('Compare rosters >'):
     st.switch_page('views/compare_tool.py')
 
+if st.button('Calculate ELO >'):
+    st.switch_page('views/calculate_elo.py')
+
 # Intentional backup page
