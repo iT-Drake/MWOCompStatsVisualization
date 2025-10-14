@@ -102,7 +102,7 @@ def player_mechs(df, options):
 
         charts = [
             bar_chart(top_chassis, 'Most used chassis', 'Chassis', 'count'),
-            bar_chart(chassis_stats, 'Highest winrate chassis', 'Chassis', 'WLR', style='alternate')
+            bar_chart(chassis_stats, 'Chassis with highest WLR', 'Chassis', 'WLR', style='alternate')
         ]
         charts_block(charts)
 

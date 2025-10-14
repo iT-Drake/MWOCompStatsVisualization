@@ -83,6 +83,7 @@ def mech_statistics(df, options):
 
     merged_data['Uses'] = merged_data['Uses'].astype(int)
     merged_data['Score'] = merged_data['Score'].astype(int)
+    merged_data['Order'] = [1 if uses > 0 else 0 for uses in merged_data['Uses']]
 
     page_size = 100
     last_page = merged_data.shape[0] // page_size
@@ -132,7 +133,7 @@ def mech_statistics(df, options):
     end_idx = (1 + page_number) * page_size
 
     # Sorting dataset
-    merged_data = merged_data.sort_values(['Score', 'Uses', 'MS'], ascending=[False, True, False], ignore_index=True).iloc[start_idx:end_idx]
+    merged_data = merged_data.sort_values(['Order', 'Score', 'Uses', 'MS'], ascending=[False, False, False, False], ignore_index=True).iloc[start_idx:end_idx]
 
     merged_data['Rank'] = merged_data.index + 1
     df_height = 35 * (merged_data.shape[0] + 1) + 3

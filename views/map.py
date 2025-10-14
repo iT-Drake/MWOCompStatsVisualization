@@ -121,10 +121,11 @@ def map_tournaments(df, map):
     ]).copy().reset_index()
     map_data['WinRate'] = map_data['Wins'] / map_data['Total']
 
-    chart = alt.Chart(map_data).mark_bar().encode(
+    bars = alt.Chart(map_data).mark_bar().encode(
         x=alt.X('WinRate:Q', axis=alt.Axis(format='.0%'), title='Win rate'),
         y=alt.Y('Tournament:N', sort='-x'),
         color='Team:N',
+        order=alt.Order('Team:N'),
         tooltip=[
             alt.Tooltip(f'Tournament:N', title='Tournament'),
             alt.Tooltip(f'Team:N', title='Team'),
@@ -134,6 +135,29 @@ def map_tournaments(df, map):
     ).properties(
         title=map
     )
+
+    text = alt.Chart(map_data).mark_text(
+        # align=alt.expr(alt.expr.if_(alt.datum.Team == 1, "left", "right")),
+        align='right',
+        baseline='middle',
+        # dx=alt.expr(alt.expr.if_(alt.datum.Team == 1, 0, -0)),
+        dx=-10,
+        dy=0,
+        color='white'
+    ).encode(
+        x=alt.X('WinRate:Q').stack('zero'),
+        y=alt.Y('Tournament:N', sort='-x'),
+        detail='Team:N',
+        text=alt.condition(
+            alt.datum.Wins > 0,
+            alt.Text('Wins:Q', format='.0f'),
+            alt.value('')
+        ),
+        order=alt.Order('Team:N')
+    )
+
+    chart = bars + text
+
     st.altair_chart(chart)
 
     st.divider()
