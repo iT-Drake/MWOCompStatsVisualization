@@ -137,10 +137,8 @@ def map_tournaments(df, map):
     )
 
     text = alt.Chart(map_data).mark_text(
-        # align=alt.expr(alt.expr.if_(alt.datum.Team == 1, "left", "right")),
         align='right',
         baseline='middle',
-        # dx=alt.expr(alt.expr.if_(alt.datum.Team == 1, 0, -0)),
         dx=-10,
         dy=0,
         color='white'

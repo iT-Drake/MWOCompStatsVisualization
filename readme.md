@@ -111,5 +111,5 @@ For scalability purpuses, rosters data have two parts:
 [license-shield]: https://img.shields.io/github/license/iT-Drake/MWOCompStatsVisualization.svg?style=for-the-badge
 [license-url]: https://github.com/iT-Drake/MWOCompStatsVisualization/blob/main/LICENSE
 
-[version-shield]: https://img.shields.io/badge/Version-0.4.0-blue?style=for-the-badge
+[version-shield]: https://img.shields.io/badge/Version-0.4.2-blue?style=for-the-badge
 [version-url]: https://github.com/iT-Drake/MWOCompStatsVisualization
