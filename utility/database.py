@@ -42,7 +42,9 @@ def initialize_database():
             ComponentsDestroyed INTEGER,
             MatchScore INTEGER,
             Damage INTEGER,
-            TeamDamage INTEGER
+            TeamDamage INTEGER,
+            Rating INTEGER,
+            Rating_change INTEGER
         )"""
 
         cursor.execute(create_table_sql)
