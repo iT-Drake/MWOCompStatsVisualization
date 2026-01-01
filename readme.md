@@ -87,7 +87,7 @@ Data returned by PGI's API contains only mech id and original name without any i
 | 57      | com-tdk       | COM-TDK | COM     | 25      | LIGHT   | HERO    |
 
 You can find current official list of all mechs in JSON format at [mwomercs](https://static.mwomercs.com/api/mechs/list/dict.json).
-And a template file with data from JUN 2025 [here](examples/mechdata.csv).
+And a template file with data from DEC 2025 [here](examples/mechdata.csv).
 
 #### Team rosters
 
