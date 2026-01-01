@@ -50,24 +50,27 @@ def player_overview(df, options):
         losses = filter_dataframe(player_data, 'Score', -1).shape[0]
         WLR = safe_division(wins, losses)
 
-        kills = player_data['Kills'].sum()
+        kills_total = player_data['Kills'].sum()
+        kills = player_data['Kills'].mean()
         deaths = player_data[player_data['HealthPercentage'] == 0].shape[0]
-        KDR = safe_division(kills, deaths)
+        KDR = safe_division(kills_total, deaths)
+        survival_rate = safe_division(games_played - deaths, games_played)
         
-        kmdds = player_data['KillsMostDamage'].sum()
-        damage = player_data['Damage'].sum()
+        kmdds = player_data['KillsMostDamage'].mean()
+        damage = player_data['Damage'].mean()
+        match_score = player_data['MatchScore'].mean()
 
         col1, col2 = st.columns([4, 2])
         with col1:
             metrics = {
                 'Games played': games_played,
+                'Kills (avg.)': f'{kills:.2f}',
                 'Win/Loss ratio': f'{WLR:.2f}',
-                'Kills': kills,
-                'KMDDs': kmdds,
-                'Score': score,
+                'Damage (avg.)': f'{damage:.2f}',
+                'Match score (avg.)': f'{match_score:.2f}',
+                'KMDDs (avg.)': f'{kmdds:.2f}',
                 'Kills/Deaths ratio': f'{KDR:.2f}',
-                'Deaths': deaths,
-                'Damage': damage
+                'Survival rate': f'{survival_rate:.2f}',
             }
             metrics_block(metrics, columns=4)
 
