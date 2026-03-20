@@ -20,27 +20,6 @@ def calculate_wlr(values):
     return safe_division(values.eq('WIN').sum(), values.eq('LOSS').sum())
 
 def leaderboard_data(df):
-    # current_top100 = df.groupby('Username').last().sort_values(by='Rating', ascending=False).reset_index().head(100)
-    # filtered_df = df[df['Username'].isin(current_top100['Username'])].copy()
-
-    # filtered_df['Deaths'] = [1 if health == 0 else 0 for health in filtered_df['HealthPercentage']]
-    # pilot_stats = filtered_df.groupby(['Username'], as_index=False).agg(
-    #     Tonnage=('Tonnage', 'mean'),
-    #     MS=('MatchScore', 'mean'),
-    #     Kills=('Kills', 'mean'),
-    #     KMDDs=('KillsMostDamage', 'mean'),
-    #     Assists=('Assists', 'mean'),
-    #     CD=('ComponentsDestroyed', 'mean'),
-    #     Deaths=('Deaths', 'mean'),
-    #     DMG=('Damage', 'mean'),
-    #     TD=('TeamDamage', 'mean'),
-    #     WLR=('MatchResult', lambda values: calculate_wlr(values)),
-    #     Games=('MatchID','nunique'),
-    #     Score=('Score','sum'),
-    #     Rating=('Rating','last'),
-    #     MaxGain=('Rating_change','max'),
-    #     MaxLoss=('Rating_change','min')
-    # ).rename(columns={'Username': 'Pilot'}).sort_values(by='Rating', ascending=False).reset_index()
     df['CompleteTime'] = pd.to_datetime(df['CompleteTime'], format='ISO8601').dt.tz_convert(None)
     two_years_ago = datetime.now() - timedelta(days=730)
 
@@ -100,88 +79,9 @@ def display_data(df, leaderboard):
 
         leaderboard = leaderboard.style.format(subset=['Tonnage', 'MS', 'Kills', 'KMDDs', 'Assists', 'CD', 'Deaths', 'DMG', 'TD', 'WLR', 'Rating'], formatter="{:.2f}")
 
-        # column_order = ['Rank', 'Pilot', 'Tonnage', 'MS', 'Kills', 'KMDDs', 'Assists', 'CD', 'Deaths', 'DMG', 'TD', 'WLR', 'Games', 'Score', 'MaxGain', 'MaxLoss', 'Rating']
         column_order = ['Rank', 'Pilot', 'Tonnage', 'MS', 'Kills', 'KMDDs', 'Assists', 'CD', 'Deaths', 'DMG', 'TD', 'WLR', 'Games', 'Score', 'Rating']
         st.dataframe(leaderboard, hide_index=True, column_order=column_order, use_container_width=True, height=df_height)
     else:
-        # from openskill.models import PlackettLuce
-
-        # model = PlackettLuce()
-
-        # team1 = [model.rating(name=str(index)) for index in range(1, 9)]
-        # team2 = [model.rating(name=str(index)) for index in range(1, 9)]
-
-        # teams = [team1, team2]
-        # ranks = [1, 2]
-        # # weights = [[0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2], [1, 1, 1, 1, 1, 1, 1, 1]]
-        # weights = [[0.8, 0.85, 0.90, 0.95, 1.0, 1.05, 1.1, 1.15], [1, 1, 1, 1, 1, 1, 1, 1]]
-
-        # new_ratings = model.rate(teams=teams, ranks=ranks, weights=weights)
-
-        # print("First game:")
-        # print("Team 1 changes:")
-        # for old, new in zip(team1, new_ratings[0]):
-        #     print(f"Rating: {new.ordinal() - old.ordinal()}, mu: {new.mu - old.mu}, sigma: {new.sigma - old.sigma}")
-        
-        # print("Team 2 changes:")
-        # for old, new in zip(team2, new_ratings[1]):
-        #     print(f"Rating: {new.ordinal() - old.ordinal()}, mu: {new.mu - old.mu}, sigma: {new.sigma - old.sigma}")
-
-        # team1 = new_ratings[0]
-        # teams = [team1, team2]
-        # ranks = [1, 2]
-        # # weights = [[0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2], [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2]]
-        # weights = [[0.8, 0.85, 0.90, 0.95, 1.0, 1.05, 1.1, 1.15], [1, 1, 1, 1, 1, 1, 1, 1]]
-
-        # new_ratings = model.rate(teams=teams, ranks=ranks, weights=weights)
-
-        # print("Second game:")
-        # print("Team 1 changes:")
-        # for old, new in zip(team1, new_ratings[0]):
-        #     print(f"Rating: {new.ordinal() - old.ordinal()}, mu: {new.mu - old.mu}, sigma: {new.sigma - old.sigma}")
-        
-        # print("Team 2 changes:")
-        # for old, new in zip(team2, new_ratings[1]):
-        #     print(f"Rating: {new.ordinal() - old.ordinal()}, mu: {new.mu - old.mu}, sigma: {new.sigma - old.sigma}")
-
-        # from openskill.models import PlackettLuce
-
-        # model = PlackettLuce()
-
-        # team1 = [model.rating(name=str(index)) for index in range(1, 4)]
-        # team2 = [model.rating(name=str(index)) for index in range(1, 4)]
-
-        # teams = [team1, team2]
-        # ranks = [1, 2]
-
-        # # Example 1
-        # weights = [[0.5, 1, 2], [1, 1, 1]]
-
-        # new_ratings = model.rate(teams=teams, ranks=ranks, weights=weights)
-
-        # print("Team 1:")
-        # for old, new in zip(team1, new_ratings[0]):
-        #         print(f"Rating: {new.ordinal() - old.ordinal()}, mu: {new.mu - old.mu}, sigma: {new.sigma - old.sigma}")
-
-        # print("Team 2:")
-        # for old, new in zip(team2, new_ratings[1]):
-        #         print(f"Rating: {new.ordinal() - old.ordinal()}, mu: {new.mu - old.mu}, sigma: {new.sigma - old.sigma}")
-
-        # # Example 2
-        # weights = [[0.95, 1, 1.05], [0.95, 1, 1.05]]
-
-        # new_ratings = model.rate(teams=teams, ranks=ranks, weights=weights)
-
-        # print("Team 1:")
-        # for old, new in zip(team1, new_ratings[0]):
-        #         print(f"Rating: {new.ordinal() - old.ordinal()}, mu: {new.mu - old.mu}, sigma: {new.sigma - old.sigma}")
-
-        # print("Team 2:")
-        # for old, new in zip(team2, new_ratings[1]):
-        #         print(f"Rating: {new.ordinal() - old.ordinal()}, mu: {new.mu - old.mu}, sigma: {new.sigma - old.sigma}")
-
-        # ------------------------------------------------------------------------------------------------------------
-
         filtered_df = filtered_df.copy()
         match_ids = filtered_df['MatchID'].drop_duplicates()
         team_names = get_team_names(df, match_ids)
@@ -189,8 +89,7 @@ def display_data(df, leaderboard):
             lambda row: team_names[row['MatchID']]['2' if row['Team'] == '1' else '1'],
             axis=1
         )
-        # filtered_df['CompleteTime'] = pd.to_datetime(filtered_df['CompleteTime'], format='ISO8601')
-
+        
         for pilot in options['Username']:
             pilot_data = filter_dataframe(filtered_df, 'Username', pilot)
             
@@ -208,10 +107,6 @@ def display_data(df, leaderboard):
             games = pilot_data.shape[0]
 
             domain = ['PilotRating', 'OpponentRating', 'TeamRating']
-            colors = ['darkslateblue', 'steelblue', 'seagreen']
-            strokes = [[0,0], [4,4], [4,4]]
-            opacities = [1.0, 0.4, 0.1]
-            widths = [2, 5]
             division_scale = alt.Scale(scheme='dark2')
             
             # Baseline data and chart shape
@@ -248,41 +143,29 @@ def display_data(df, leaderboard):
                 color=alt.value('gray')
             )
 
-            # Layer 1: lines
-            lines = base.mark_line(strokeWidth=2).encode(
+            # Layer 1: Team and opponent rating
+            background_lines = base.transform_filter(
+                alt.datum.RatingType != 'PilotRating'
+            ).mark_line(strokeWidth=2, strokeDash=[4,4]).encode(
                 y=alt.Y('RatingValue:Q', title='Rating'),
                 color=alt.Color('RatingType:N', 
-                    title="Lines",
-                    scale=alt.Scale(domain=domain, range=colors),
+                    scale=alt.Scale(domain=['OpponentRating', 'TeamRating'], range=['steelblue', 'seagreen']),
+                    title="Lines"
                 ),
-                strokeDash=alt.StrokeDash('RatingType:N', 
-                    scale=alt.Scale(domain=domain, range=strokes),
-                    legend=None
-                ),
-                opacity=alt.Opacity('RatingType:N',
-                    scale=alt.Scale(domain=domain, range=opacities),
-                    legend=None
-                )
+                opacity=alt.value(0.4)
             )
 
-            # opponent_ticks = base.mark_tick(
-            #     color='steelblue',
-            #     thickness=3,
-            #     size=10,
-            #     opacity=0.5
-            # ).encode(
-            #     y='OpponentRating:Q'
-            # )
-            # team_ticks = base.mark_tick(
-            #     color='seagreen',
-            #     thickness=3,
-            #     size=10,
-            #     opacity=0.5
-            # ).encode(
-            #     y='TeamRating:Q'
-            # )
+            # Layer 2: Pilot rating
+            pilot_line = base.transform_filter(
+                alt.datum.RatingType == 'PilotRating'
+            ).mark_line(
+                strokeWidth=4,
+                color='darkslateblue'
+            ).encode(
+                y=alt.Y('RatingValue:Q', title='Rating'),
+            )
 
-            # Layer 2: points
+            # Layer 3: points
             points = base.transform_filter(
                 alt.datum.RatingType == 'PilotRating'
             ).mark_point(
@@ -308,7 +191,8 @@ def display_data(df, leaderboard):
 
             chart = alt.layer(
                 uncertainty_band,
-                lines,
+                background_lines,
+                pilot_line,
                 points,
                 year_labels,
             ).resolve_scale(

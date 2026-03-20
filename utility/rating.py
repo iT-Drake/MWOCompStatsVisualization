@@ -35,16 +35,6 @@ class MWO_Rating_System:
         return self.player_ratings[player_name]
     
     def _update_chassis_stats(self, chassis, stats, division = None):
-        # if chassis not in self.chassis_stats:
-        #     self.chassis_stats[chassis] = {indicator: stats[indicator] for indicator in self.performance_indicators}
-        #     self.chassis_stats[chassis]['Uses'] = 1
-        # else:
-        #     historic_stats = self.chassis_stats[chassis]
-        #     uses = historic_stats['Uses']
-        #     for indicator in self.performance_indicators:
-        #         historic_stats[indicator] = (stats[indicator] + historic_stats[indicator] * uses) / (uses + 1)
-        #     historic_stats['Uses'] += 1
-
         def update(data, stats, chassis):
             if chassis in data:
                 historic_stats = data[chassis]
@@ -78,18 +68,6 @@ class MWO_Rating_System:
             result = dividend / divisor
             return floor if result < floor else ceiling if result > ceiling else result
 
-        # def valid_stats(chassis):
-        #     return chassis in self.chassis_stats and self.chassis_stats[chassis]['Uses'] >= self.historic_stats_threshold
-
-        # chassis = data['Chassis']
-        # if not valid_stats(chassis):
-        #     self._update_chassis_stats(chassis, data)
-        #     return 1
-        
-        # stats = self.chassis_stats[chassis]
-        # normalized_stats = [normalized_division(data[indicator], stats[indicator]) for indicator in self.performance_indicators]
-        # return sum(normalized_stats) / len(self.performance_indicators)
-
         def valid_stats(chassis, division):
             if division not in self.chassis_stats:
                 self.chassis_stats[division] = {}
@@ -107,8 +85,6 @@ class MWO_Rating_System:
         stats = division_data[chassis]
         normalized_stats = [normalized_division(data[indicator], stats[indicator]) for indicator in self.performance_indicators]
         return sum(normalized_stats) / len(self.performance_indicators)
-
-        # return 1
     
     def make_predictions(self, teams, ranks):
         self.processed_matches += 1
