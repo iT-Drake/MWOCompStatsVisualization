@@ -10,6 +10,10 @@ API_URL = st.secrets["API_URL"]
 MECH_DATA_URL = st.secrets["MECH_DATA_URL"]
 ROSTER_URLS = st.secrets["ROSTER_URLS"]
 
+# CONSTANTS
+
+RATING_BASE = 50
+
 # SETTINGS
 
 def get_cached_value(key, default=None):
