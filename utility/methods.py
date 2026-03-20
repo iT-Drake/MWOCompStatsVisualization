@@ -23,7 +23,7 @@ def parse_match_ids(submitted_text):
     
     pattern = r'[^\d]*(\d{6,})[^\d]*'
     items = re.findall(pattern, submitted_text)
-    return list(set(items))
+    return list(dict.fromkeys(items))
 
 # General pandas dataframe operations
 
