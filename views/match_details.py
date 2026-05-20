@@ -95,6 +95,7 @@ def get_match_details(id_list):
             st.stop()
         result[match_id] = json_data
 
+    result = dict(sorted(result.items(), key=lambda item: item[1]['MatchDetails']['CompleteTime']))
     return result
 
 def json2df(json_list):
