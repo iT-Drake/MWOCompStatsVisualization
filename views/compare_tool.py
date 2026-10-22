@@ -26,7 +26,7 @@ def display_inputs():
     team1 = col1.text_area('Team 1')
     team2 = col2.text_area('Team 2')
 
-    if not st.button('Compare', use_container_width=True):
+    if not st.button('Compare', width='stretch'):
         st.markdown("#### Each pilot name should be on a new line.\n#### Error will be displayed if pilot wasn't found on Jarl's list.")
     else:
         team1_pilots = [pilot.strip().lower() for pilot in team1.splitlines() if pilot]
@@ -93,7 +93,7 @@ def display_stats(container, pilots, df):
     team_data.columns = ['Pilot', 'QP Rank', 'Games', 'Div (High)', 'Games (High)', 'Div (Avg)', 'Conf.']
 
     df_height = 35 * (team_data.shape[0] + 1) + 3
-    container.dataframe(team_data, hide_index=True, use_container_width=True, height=df_height)
+    container.dataframe(team_data, hide_index=True, width='stretch', height=df_height)
     container.info(f'Division: {decode_division(team_division)} ({float(team_division):.2})\n\nConfidence: {team_confidence:.1%}')
 
     grouped_df = pilots_data.groupby('Division').agg({
@@ -115,7 +115,7 @@ def display_stats(container, pilots, df):
         y=alt.Y('Count:Q', title=None).stack(None),
         color=alt.Color('Metric:N', legend=alt.Legend(title='Legend'))
     )
-    container.altair_chart(chart, use_container_width=True)
+    container.altair_chart(chart, width='stretch')
 
 def display_metrics(df):
     match_stats = df.groupby('MatchID')['MatchResult'].value_counts().reset_index()

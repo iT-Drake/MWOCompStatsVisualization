@@ -1,5 +1,6 @@
 from openskill.models import PlackettLuce
 from utility.globals import RATING_BASE
+from utility.performance import PerformanceIndex
 
 class MWO_Rating_System:
     def __init__(self, mu=25.0, sigma=25.0/3, beta=25.0/60, tau=25.0/3000):
@@ -104,13 +105,16 @@ class MWO_Rating_System:
         ratings = [[self._get_player_rating(player_name=player) for player in team] for team in teams]
         return self.model.predict_win(teams=ratings)
 
-    def process_match(self, match_data):
+    def process_match(self, match_data, historical_data):
         """
         Processes the results of a single match and updates player ratings.
 
         Args:
-            match_data (list of dicts): A list of player performance dictionaries.
+            match_data: single match data.
+            historical_data: all data prior the match.
         """
+        performance_index = PerformanceIndex(historical_data)
+
         indexes = {}
         teams_data = {}
         teams_ranks = {}
@@ -127,7 +131,8 @@ class MWO_Rating_System:
             for index, row in side.iterrows():
                 player = row['Username']
                 rating = self._get_player_rating(player_name=player)
-                performance = self._performance_index(row)
+                # performance = self._performance_index(row)
+                performance = performance_index.calculate(row)
 
                 team['players'].append(rating)
                 team['performance'].append(performance)
@@ -158,11 +163,11 @@ class MWO_Rating_System:
         
         records = {}
         for team_index, team in enumerate(updated_ratings):
-            for rating in team:
+            for player_index, rating in enumerate(team):
                 self.player_ratings[rating.name] = rating
                 index = indexes[rating.name]
                 records[index] = {'PilotRating': rating.ordinal(target=RATING_BASE), 'RatingBase': rating.mu, 'RatingUncertainty': rating.sigma,
-                                  'OpponentRating': opposing_team_rating[team_index], 'TeamRating': team_rating[team_index]}
+                                  'OpponentRating': opposing_team_rating[team_index], 'TeamRating': team_rating[team_index], 'Performance': openskill_performance[team_index][player_index]}
         
         return records
 

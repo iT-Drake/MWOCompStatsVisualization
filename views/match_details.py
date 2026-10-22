@@ -40,7 +40,7 @@ def teams_block(teams, team1_score, team2_score):
         column = columns[index]
         with column:
             df = pd.DataFrame(value)
-            st.dataframe(df, hide_index=True, use_container_width=True)
+            st.dataframe(df, hide_index=True, width='stretch')
         index += 1
 
 def display_match_details(id, details):
@@ -140,12 +140,12 @@ def download_button(details_list):
         file_name="data_dump.csv",
         mime='text/csv',
         type='primary',
-        use_container_width=True
+        width='stretch'
     )
 
 def display_inputs():
     match_ids = st.text_input('Enter match id', value=None, placeholder='Enter match ID', label_visibility='hidden')
-    button_pressed = st.button('Submit', use_container_width=True)
+    button_pressed = st.button('Submit', width='stretch')
 
     if button_pressed and not match_ids:
         error('Please, specify match ID to fetch data for.')

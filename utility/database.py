@@ -56,7 +56,7 @@ def read_comp_data():
     initialize_database()
 
     conn = sql.connect(DB_NAME)
-    df = pd.read_sql_query("SELECT * FROM CompData ORDER BY CompleteTime, Team, Lance, Username", conn, index_col='ID')
+    df = pd.read_sql_query("SELECT * FROM CompData ORDER BY CompleteTime, Team, Lance, Username", conn, index_col='ID', parse_dates=['CompleteTime']).reset_index()
     conn.close()
 
     return df

@@ -14,7 +14,7 @@ def team_renaming(df):
     key = 'TeamName'
     _, options = filters_block(df, {key: 'Team'}, multiselect=False)
     new_value = st.text_input('New name', '', key='team_name_input', placeholder='New name', label_visibility='hidden')
-    button_pressed = st.button('Change name', key='team_name_button', use_container_width=True)
+    button_pressed = st.button('Change name', key='team_name_button', width='stretch')
     if button_pressed:
         old_value = options[key] if key in options and options[key] else ''
         if old_value and new_value and new_value != old_value:
@@ -28,7 +28,7 @@ def pilot_renaming(df):
     key = 'Username'
     _, options = filters_block(df, {key: 'Pilot'}, multiselect=False)
     new_value = st.text_input('New name', '', key='pilot_name_input', placeholder='New name', label_visibility='hidden')
-    button_pressed = st.button('Change name', key='pilot_name_button', use_container_width=True)
+    button_pressed = st.button('Change name', key='pilot_name_button', width='stretch')
     if button_pressed:
         old_value = options[key] if key in options and options[key] else ''
         if old_value and new_value and new_value != old_value:

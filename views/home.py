@@ -16,7 +16,7 @@ def general_statistics(df):
     players = nunique(df, 'Username')
     games = nunique(df, 'MatchID')
 
-    start_date = pd.to_datetime(df['CompleteTime'].iloc[0], format='ISO8601').strftime("%Y-%m-%d") if df.size > 0 else "--/--/----"
+    start_date = df['CompleteTime'].iloc[0].strftime("%Y-%m-%d") if df.size > 0 else "--/--/----"
 
     metrics = {
         'Tournaments': tournaments,
@@ -28,31 +28,6 @@ def general_statistics(df):
     metrics_block(metrics)
 
     st.divider()
-
-def submitted_games(df):
-    df['CompleteTime'] = pd.to_datetime(df['CompleteTime'], format='ISO8601')
-    st.altair_chart(line_chart_submitted_games(df), use_container_width=True)
-
-def recently_added(df):
-    st.write('Last 10 uploaded games:')
-
-    unique_matches = df['MatchID'].unique()
-    last_10_matches = unique_matches[-10:]
-
-    result = df[df['MatchID'].isin(last_10_matches)].copy()
-    result['CompleteTime'] = pd.to_datetime(result['CompleteTime'], format='ISO8601')
-    
-    result = result.sort_values(by=['CompleteTime', 'MatchID', 'MatchResult'], ascending=False).groupby('MatchID').agg(
-        Map=('Map', 'first'),
-        Team1=('TeamName', 'first'),
-        Result=('MatchResult', 'first'),
-        Team2=('TeamName', 'last')
-    ).reset_index()
-    result['MatchID'] = result['MatchID'].astype(str)
-
-    result.columns = ['ID', 'Map', 'Team 1', 'Result', 'Team 2']
-
-    st.dataframe(result, hide_index=True, use_container_width=True)
 
 def introduction():
     st.header("Introduction to the tool")

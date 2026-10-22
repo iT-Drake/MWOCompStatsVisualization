@@ -21,7 +21,7 @@ def display_form():
 
     submitted_text = form.text_area('Get API data for provided IDs:', placeholder='List of Match IDs', key='match_ids')
     match_ids = parse_match_ids(submitted_text)
-    button_pressed = form.form_submit_button('Submit', use_container_width=True)
+    button_pressed = form.form_submit_button('Submit', width='stretch')
 
     if button_pressed and not tournament:
         error('Tournament must be selected to connect pilot names to the teams they played for.')

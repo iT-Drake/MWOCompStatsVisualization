@@ -92,7 +92,7 @@ def leaderboard(df):
 
     col1, _ , col2, col3, col4 = st.columns([4, 2, 1, 1, 1])
     with col1:
-        with st.popover("Column descriptions:", use_container_width=True):
+        with st.popover("Column descriptions:", width='stretch'):
             st.markdown('''
                 - `Tonnage`: Average mech tonnage
                 - `MS`: Match Score (avg.)
@@ -111,14 +111,14 @@ def leaderboard(df):
             ''')
     
     with col2:
-        if st.button("Previous", use_container_width=True):
+        if st.button("Previous", width='stretch'):
             if page_number - 1 < 0:
                 page_number = last_page
             else:
                 page_number -= 1
 
     with col4:
-        if st.button("Next", use_container_width=True):
+        if st.button("Next", width='stretch'):
             if page_number + 1 > last_page:
                 page_number = 0
             else:
@@ -140,7 +140,7 @@ def leaderboard(df):
     pilot_stats = pilot_stats.style.format(subset=['Tonnage', 'MS', 'Kills', 'KMDDs', 'Assists', 'CD', 'Deaths', 'DMG', 'TD', 'WLR', 'AWLR', 'KDR'], formatter="{:.2f}")
 
     column_order = ['Rank', 'Pilot', 'Tonnage', 'MS', 'Kills', 'KMDDs', 'Assists', 'CD', 'Deaths', 'KDR', 'DMG', 'TD', 'WLR', 'AWLR', 'Games', 'Score']
-    st.dataframe(pilot_stats, hide_index=True, column_order=column_order, use_container_width=True, height=df_height)
+    st.dataframe(pilot_stats, hide_index=True, column_order=column_order, width='stretch', height=df_height)
 
 header()
 df, options = filters()

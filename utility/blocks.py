@@ -63,7 +63,7 @@ def charts_block(charts, columns = None):
     index = 0
     for chart in charts:
         column = collection[index]
-        column.altair_chart(chart, use_container_width=True)
+        column.altair_chart(chart, width='stretch')
 
         index += 1
         if index >= columns:

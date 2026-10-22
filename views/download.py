@@ -15,11 +15,11 @@ def filters():
     return df
 
 def generate_button(df):
-    button_pressed = st.button('Generate file with all data', use_container_width=True)
+    button_pressed = st.button('Generate file with all data', width='stretch')
     if button_pressed:
         download_button(df)
 
-    button_pressed = st.button('Generate file with only match IDs', use_container_width=True)
+    button_pressed = st.button('Generate file with only match IDs', width='stretch')
     if button_pressed:
         df = unique(df, 'MatchID')
         download_button(df)
@@ -32,7 +32,7 @@ def download_button(df):
         file_name="data_dump.csv",
         mime='text/csv',
         type='primary',
-        use_container_width=True
+        width='stretch'
     )
 
 header()
