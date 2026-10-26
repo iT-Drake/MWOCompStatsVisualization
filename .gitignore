@@ -2,8 +2,11 @@ __pycache__/
 .streamlit/secrets.toml
 .venv/
 .vscode/
+tools/
+historic_data/
 .env
 *.sqlite3
 *.db
 *.bat
 TODO.md
+AGENTS.md

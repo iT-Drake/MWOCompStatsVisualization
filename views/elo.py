@@ -6,7 +6,6 @@ from utility.database import read_comp_data
 from utility.methods import safe_division, filter_dataframe
 from utility.blocks import filters_block, metrics_block
 from utility.globals import RATING_BASE
-from utility.performance import PerformanceIndex
 
 from datetime import datetime, timedelta, timezone
 
@@ -401,10 +400,7 @@ def display_match_data(df, selected_data):
         winner = first_line['WinningTeam']
         
         unique_pilots = match_data['Username'].tolist()
-        unique_mechs = match_data['Mech'].drop_duplicates().tolist()
         ratings = pilot_ratings(history_df, unique_pilots)
-
-        performance_index = PerformanceIndex(history_df, mech_filter=unique_mechs)
 
         metrics = {
             'Match': id,
@@ -424,22 +420,15 @@ def display_match_data(df, selected_data):
             team_id = teams[index]
             team_data = match_data[match_data['Team'] == team_id].copy()
 
-            team_counts = team_data.groupby(['TeamName'])['Username'].transform('count')
-            team_data['TeamSize'] = team_counts.round().astype(int)
-            
-            performance = []
             pre_ratings = []
 
             for _, row in team_data.iterrows():
-                weight = performance_index.calculate(row)
-                performance.append(round(weight, 3))
                 pre_ratings.append(round(ratings.get(row['Username'], 50.0), 2))
 
             team_data['StartingRating'] = pre_ratings
-            team_data['PerformanceIndex'] = performance
 
             display_df = team_data[[
-                'Username', 'MatchScore', 'Damage', 'Kills', 'KillsMostDamage', 'PilotRating', 'Performance', 'StartingRating', 'PerformanceIndex'
+                'Username', 'Mech', 'MatchScore', 'Damage', 'Kills', 'KillsMostDamage', 'PilotRating', 'Performance', 'StartingRating'
             ]]
 
             with column:

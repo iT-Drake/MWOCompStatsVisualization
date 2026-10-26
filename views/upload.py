@@ -26,7 +26,23 @@ def display_form():
     if button_pressed and not tournament:
         error('Tournament must be selected to connect pilot names to the teams they played for.')
     elif button_pressed:
-        batch_request(match_ids, tournament)
+        result = batch_request(match_ids, tournament)
+        uploaded = result['uploaded']
+        recalculation = result['recalculation']
+
+        if uploaded:
+            st.success(f"Uploaded {uploaded} new matches.")
+        else:
+            st.info("No new matches were uploaded.")
+
+        if recalculation.get('status') == 'done':
+            st.info(
+                f"Ratings recalculated for {recalculation['matches']} matches "
+                f"({recalculation['rows']} rows) from {recalculation['recalc_from']} "
+                f"in {recalculation['seconds']} seconds."
+            )
+        elif recalculation.get('status') == 'skipped':
+            st.info(f"No rating recalculation was needed. {recalculation.get('reason', '')}")
 
 back_button()
 header()

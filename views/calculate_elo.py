@@ -8,9 +8,8 @@ from datetime import datetime
 
 from utility.requests import jarls_pilot_stats
 from utility.methods import filter_dataframe, nunique, safe_division, unique, error, parse_match_ids
-from utility.database import read_comp_data
+from utility.database import read_comp_data, ensure_rating_columns
 from utility.blocks import metrics_block
-from utility.performance import PerformanceIndex
 
 from utility.globals import DB_NAME, RATING_BASE
 
@@ -110,12 +109,9 @@ def update_columns(conn):
     # run_query(conn, "ALTER TABLE CompData DROP COLUMN PilotRating")
     # run_query(conn, "ALTER TABLE CompData DROP COLUMN RatingBase")
     # run_query(conn, "ALTER TABLE CompData DROP COLUMN RatingUncertainty")
-    run_query(conn, "ALTER TABLE CompData ADD COLUMN PilotRating NUMERIC")
-    run_query(conn, "ALTER TABLE CompData ADD COLUMN Performance NUMERIC")
-    run_query(conn, "ALTER TABLE CompData ADD COLUMN TeamRating NUMERIC")
-    run_query(conn, "ALTER TABLE CompData ADD COLUMN OpponentRating NUMERIC")
-    run_query(conn, "ALTER TABLE CompData ADD COLUMN RatingBase NUMERIC")
-    run_query(conn, "ALTER TABLE CompData ADD COLUMN RatingUncertainty NUMERIC")
+    added = ensure_rating_columns(conn)
+    if added:
+        st.info(f"Added columns: {', '.join(added)}")
 
 def historical_data(df):
     first_ten_records = df.groupby("Chassis").head(10)
@@ -227,10 +223,7 @@ def calculate_rating_change(df, id):
     winner = first_line['WinningTeam']
     
     unique_pilots = match_data['Username'].tolist()
-    unique_mechs = match_data['Mech'].drop_duplicates().tolist()
     ratings = pilot_ratings(history_df, unique_pilots)
-
-    performance_index = PerformanceIndex(history_df, mech_filter=unique_mechs)
 
     metrics = {
         'Team 1': f"{team1_rating:.2f}",
@@ -247,22 +240,15 @@ def calculate_rating_change(df, id):
         team_id = teams[index]
         team_data = match_data[match_data['Team'] == team_id].copy()
 
-        team_counts = team_data.groupby(['TeamName'])['Username'].transform('count')
-        team_data['TeamSize'] = team_counts.round().astype(int)
-        
-        performance = []
         pre_ratings = []
 
         for _, row in team_data.iterrows():
-            weight = performance_index.calculate(row)
-            performance.append(round(weight, 3))
             pre_ratings.append(round(ratings.get(row['Username'], 50.0), 2))
 
         team_data['StartingRating'] = pre_ratings
-        team_data['PerformanceIndex'] = performance
 
         display_df = team_data[[
-            'Username', 'MatchScore', 'Damage', 'Kills', 'KillsMostDamage', 'PilotRating', 'Performance', 'StartingRating', 'PerformanceIndex'
+            'Username', 'Mech', 'MatchScore', 'Damage', 'Kills', 'KillsMostDamage', 'PilotRating', 'Performance', 'StartingRating'
         ]]
 
         with column:
