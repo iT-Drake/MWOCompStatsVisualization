@@ -128,14 +128,13 @@ class MWO_Rating_System:
                 teams_data[team_id] = {'players': [], 'performance': []}
 
             team = teams_data[team_id]
-            for index, row in side.iterrows():
+            weights = performance_index.weigh(side)
+            for (index, row), weight in zip(side.iterrows(), weights):
                 player = row['Username']
                 rating = self._get_player_rating(player_name=player)
                 # performance = self._performance_index(row)
-                performance = performance_index.calculate(row)
-
                 team['players'].append(rating)
-                team['performance'].append(performance)
+                team['performance'].append(weight)
                 indexes[player] = index
 
         team_ids = teams_data.keys()
