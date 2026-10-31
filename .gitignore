@@ -3,6 +3,7 @@ __pycache__/
 .venv/
 .vscode/
 tools/
+tests/
 historic_data/
 .env
 *.sqlite3
