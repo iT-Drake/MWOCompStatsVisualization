@@ -1,5 +1,4 @@
 import streamlit as st
-import numpy as np
 
 from utility.database import read_comp_data
 from utility.blocks import filters_block
@@ -20,7 +19,6 @@ def get_sorting_settings():
     match value:
         case SortingOption.Score: return ['Score', 'Games', 'MS'], [False, True, False]
         case SortingOption.WLR: return ['WLR', 'Games', 'MS'], [False, False, False]
-        case SortingOption.AdjustedWLR: return ['AWLR', 'Games', 'MS'], [False, False, False]
         case SortingOption.MatchScore: return ['MS', 'Games'], [False, True]
         case SortingOption.Damage: return ['DMG', 'Games', 'MS'], [False, True, False]
         case _: return ['Score', 'Games', 'MS'], [False, True, False]
@@ -28,16 +26,9 @@ def get_sorting_settings():
 def calculate_wlr(values):
     return safe_division(values.eq('WIN').sum(), values.eq('LOSS').sum())
 
-def calculate_awlr(rating, games):
-    WLR_Scale = 1/200
-    return rating * (1 + games * WLR_Scale)
-
 def calculate_kdr(dividend, divisor):
-    result = dividend.div(divisor)
-    inf_mask = np.isinf(result)
-    result[inf_mask] = dividend[inf_mask]
-
-    return result
+    # Returning dividend if divisor is equal to zero.
+    return dividend.div(divisor).where(divisor > 0, dividend)
 
 def get_page_number(last_page):
     if 'page_number' not in st.session_state:
@@ -60,7 +51,7 @@ def pilots_data(df):
         case AggregationMethod.Sum: aggregation_method = 'sum'
         case _: aggregation_method = 'mean'
 
-    df['Deaths'] = np.where(df['HealthPercentage'] == 0, 1, 0)
+    df['Deaths'] = (df['HealthPercentage'] == 0).astype(int)
     pilot_stats = df.groupby(['Username'], as_index=False).agg(
         Tonnage=('Tonnage', 'mean'),
         MS=('MatchScore', aggregation_method),
@@ -79,8 +70,7 @@ def pilots_data(df):
     ).rename(columns={'Username': 'Pilot'})
 
     pilot_stats['KDR'] = calculate_kdr(pilot_stats['TotalKills'], pilot_stats['TotalDeaths'])
-    pilot_stats['AWLR'] = calculate_awlr(pilot_stats['WLR'], pilot_stats['Games'])
-
+    
     return pilot_stats
 
 def leaderboard(df):
@@ -105,7 +95,6 @@ def leaderboard(df):
                 - `DMG`: Damage Dealt (avg.)
                 - `TD`: Team Damage (avg.)
                 - `WLR`: Wins to Losses ratio
-                - `AWLR`: Adjusted Wins to Losses ratio, gives slight advantage to whose who played more games preserving the same WLR. Calculated as WLR * (1 + Games / 200).
                 - `Games`: Total games played
                 - `Score`: Calculated by subtracting lost games from the games won
             ''')
@@ -137,9 +126,9 @@ def leaderboard(df):
     pilot_stats['Rank'] = pilot_stats.index + 1
     
     df_height = 35 * (pilot_stats.shape[0] + 1) + 3
-    pilot_stats = pilot_stats.style.format(subset=['Tonnage', 'MS', 'Kills', 'KMDDs', 'Assists', 'CD', 'Deaths', 'DMG', 'TD', 'WLR', 'AWLR', 'KDR'], formatter="{:.2f}")
+    pilot_stats = pilot_stats.style.format(subset=['Tonnage', 'MS', 'Kills', 'KMDDs', 'Assists', 'CD', 'Deaths', 'DMG', 'TD', 'WLR', 'KDR'], formatter="{:.2f}")
 
-    column_order = ['Rank', 'Pilot', 'Tonnage', 'MS', 'Kills', 'KMDDs', 'Assists', 'CD', 'Deaths', 'KDR', 'DMG', 'TD', 'WLR', 'AWLR', 'Games', 'Score']
+    column_order = ['Rank', 'Pilot', 'Tonnage', 'MS', 'Kills', 'KMDDs', 'Assists', 'CD', 'Deaths', 'KDR', 'DMG', 'TD', 'WLR', 'Games', 'Score']
     st.dataframe(pilot_stats, hide_index=True, column_order=column_order, width='stretch', height=df_height)
 
 header()

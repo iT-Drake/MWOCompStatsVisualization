@@ -62,7 +62,7 @@ def new_record(data):
 
     return new_record
 
-def match_data(id, match_details, user_details, tournament):
+def match_data(id, drop_details, user_details, tournament):
     lines = []
     mechs = mech_data()
     all_rosters = roster_links()
@@ -98,7 +98,7 @@ def match_data(id, match_details, user_details, tournament):
             'pilot': pilot,
             'team': team,
             'mech': mech,
-            'match': match_details,
+            'match': drop_details,
             'details': line
         }
         new_line = new_record(data)
@@ -124,9 +124,9 @@ def request_match_data(match_id, tournament):
     try:
         json_data = fetch_api_data(match_id)
         if json_data:
-            match_details = json_data['MatchDetails']
+            drop_details = json_data['MatchDetails']
             user_details = json_data['UserDetails']
-            data = match_data(match_id, match_details, user_details, tournament)
+            data = match_data(match_id, drop_details, user_details, tournament)
             df = pd.DataFrame(data)
             df.columns = match_data_columns()
     except requests.exceptions.JSONDecodeError as e:

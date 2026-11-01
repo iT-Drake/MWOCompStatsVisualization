@@ -17,4 +17,7 @@ if st.button('Compare rosters >'):
 if st.button('Calculate ELO >'):
     st.switch_page('views/calculate_elo.py')
 
+if st.button('Delete game >'):
+    st.switch_page('views/delete_game.py')
+
 # Intentional backup page

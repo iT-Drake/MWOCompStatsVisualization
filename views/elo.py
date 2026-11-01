@@ -19,6 +19,9 @@ def filters(df):
 def calculate_wlr(values):
     return safe_division(values.eq('WIN').sum(), values.eq('LOSS').sum())
 
+def calculate_kdr(dividend, divisor):
+    return dividend.div(divisor).where(divisor > 0, dividend)
+
 def leaderboard_data(df):
     # df['CompleteTime'] = pd.to_datetime(df['CompleteTime'], format='ISO8601').dt.tz_convert(None)
     two_years_ago = datetime.now(timezone.utc) - timedelta(days=730)
@@ -26,7 +29,7 @@ def leaderboard_data(df):
     current_top100 = df[df['CompleteTime'] > two_years_ago].groupby('Username').last().sort_values(by='PilotRating', ascending=False).reset_index().head(100)
     filtered_df = df[df['Username'].isin(current_top100['Username'])].copy()
 
-    filtered_df['Deaths'] = [1 if health == 0 else 0 for health in filtered_df['HealthPercentage']]
+    filtered_df['Deaths'] = (filtered_df['HealthPercentage'] == 0).astype(int)
     pilot_stats = filtered_df.groupby(['Username'], as_index=False).agg(
         Tonnage=('Tonnage', 'mean'),
         MS=('MatchScore', 'mean'),
@@ -38,12 +41,14 @@ def leaderboard_data(df):
         DMG=('Damage', 'mean'),
         TD=('TeamDamage', 'mean'),
         WLR=('MatchResult', lambda values: calculate_wlr(values)),
+        TotalKills=('Kills', 'sum'),
+        TotalDeaths=('Deaths', 'sum'),
         Games=('MatchID','nunique'),
-        Score=('Score','sum'),
         Rating=('PilotRating','last')
     ).rename(columns={'Username': 'Pilot'}).sort_values(by='Rating', ascending=False).reset_index()
 
     pilot_stats['Rank'] = pilot_stats.index + 1
+    pilot_stats['KDR'] = calculate_kdr(pilot_stats['TotalKills'], pilot_stats['TotalDeaths'])
 
     return pilot_stats
 
@@ -151,9 +156,9 @@ def display_data(df, leaderboard):
 
         df_height = 35 * (leaderboard.shape[0] + 1) + 3
 
-        leaderboard = leaderboard.style.format(subset=['Tonnage', 'MS', 'Kills', 'KMDDs', 'Assists', 'CD', 'Deaths', 'DMG', 'TD', 'WLR', 'Rating'], formatter="{:.2f}")
+        leaderboard = leaderboard.style.format(subset=['Tonnage', 'MS', 'Kills', 'KMDDs', 'Assists', 'CD', 'Deaths', 'DMG', 'TD', 'KDR', 'WLR', 'Rating'], formatter="{:.2f}")
 
-        column_order = ['Rank', 'Pilot', 'Tonnage', 'MS', 'Kills', 'KMDDs', 'Assists', 'CD', 'Deaths', 'DMG', 'TD', 'WLR', 'Games', 'Score', 'Rating']
+        column_order = ['Rank', 'Pilot', 'Tonnage', 'MS', 'Kills', 'KMDDs', 'Assists', 'CD', 'Deaths', 'DMG', 'TD', 'KDR', 'WLR', 'Games', 'Rating']
         st.dataframe(leaderboard, hide_index=True, column_order=column_order, width='stretch', height=df_height)
     else:
         filtered_df = filtered_df.copy()

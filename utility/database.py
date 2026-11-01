@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 
 from utility.globals import DB_NAME
 from utility.caching import CACHE_TTL
+from utility.methods import error
 
 COMP_DATA_TABLE_SQL = """CREATE TABLE IF NOT EXISTS CompData (
     ID INTEGER PRIMARY KEY,
@@ -39,8 +40,6 @@ COMP_DATA_TABLE_SQL = """CREATE TABLE IF NOT EXISTS CompData (
     MatchScore INTEGER,
     Damage INTEGER,
     TeamDamage INTEGER,
-    Rating INTEGER,
-    Rating_change INTEGER,
     PilotRating NUMERIC,
     Performance NUMERIC,
     TeamRating NUMERIC,
@@ -197,6 +196,27 @@ def update_values(column, old_value, new_value):
 
     conn.close()
     return result
+
+#---------------------------------------------------------------------
+# EXECUTING
+#---------------------------------------------------------------------
+
+def run_query(connection, query, parameters = ()):
+    """
+    Executes query on opened connection.
+
+    Args:
+        parameters: empty tuple for a query without bindings. It must not be None -
+            sqlite3 raises "parameters are of unsupported type" for None, and because
+            this function reports failures instead of raising, the query would silently
+            not run.
+    """
+    try:
+        cursor = connection.cursor()
+        cursor.execute(query, parameters)
+        connection.commit()
+    except Exception as e:
+        error(e)
 
 #---------------------------------------------------------------------
 # WATERMARKS

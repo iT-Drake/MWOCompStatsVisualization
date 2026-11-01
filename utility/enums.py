@@ -3,7 +3,6 @@ from enum import Enum
 class SortingOption(Enum):
     Score = 'Score'
     WLR = 'Win-Loss ratio'
-    AdjustedWLR = 'Adjusted WLR'
     MatchScore = 'Match score'
     Damage = 'Damage'
 

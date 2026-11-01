@@ -1,5 +1,4 @@
 import streamlit as st
-import numpy as np
 
 from utility.database import read_comp_data
 from utility.methods import nunique, unique, filter_dataframe, error, safe_division
@@ -88,7 +87,7 @@ def team_statistics(df, options):
                 negative_horizontal_stacked_bar_chart_map_stats(team_data, team_name), width='stretch')
 
     with rosters:
-        df['Deaths'] = np.where(df['HealthPercentage'] == 0, 1, 0)
+        df['Deaths'] = (df['HealthPercentage'] == 0).astype(int)
         pilot_stats = df.groupby(['Username', 'TeamName'], as_index=False).agg(
             Score=('MatchScore','mean'),
             Tonnage=('Tonnage','mean'),

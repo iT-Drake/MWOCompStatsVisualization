@@ -26,7 +26,7 @@ def calculate_kdr(dividend, divisor):
 def mechs_data(df):
     aggregation_method = 'mean'
 
-    df['Deaths'] = [1 if health == 0 else 0 for health in df['HealthPercentage']]
+    df['Deaths'] = (df['HealthPercentage'] == 0).astype(int)
     
     mech_stats = df.groupby(['Mech', 'Chassis'], as_index=False).agg(
         Tonnage=('Tonnage', 'mean'),
