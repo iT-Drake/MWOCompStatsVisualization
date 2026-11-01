@@ -1,6 +1,9 @@
 import streamlit as st
 
+from utility.version import __version__
+
 st.header('Admin page')
+st.caption(f'Version {__version__}')
 
 if st.button('Upload data >'):
     st.switch_page('views/upload.py')
