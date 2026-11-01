@@ -1,5 +1,4 @@
 import streamlit as st
-import numpy as np
 
 from utility.database import read_comp_data
 from utility.methods import nunique, unique, filter_dataframe, error, safe_division
@@ -48,11 +47,11 @@ def team_mech_statistics(df):
 
     col1, col2, col3 = st.columns(3)
     col1.altair_chart(
-        bar_chart(top_mechs, 'Most used mechs', 'Mech', 'count'), use_container_width=True)
+        bar_chart(top_mechs, 'Most used mechs', 'Mech', 'count'), width='stretch')
     col2.altair_chart(
-        bar_chart(top_chassis, 'Most used chassis', 'Chassis', 'count', style='alternate'), use_container_width=True)
+        bar_chart(top_chassis, 'Most used chassis', 'Chassis', 'count', style='alternate'), width='stretch')
     col3.altair_chart(
-        bar_chart(class_distribution, 'Weight class distribution', 'Class', 'count'), use_container_width=True)
+        bar_chart(class_distribution, 'Weight class distribution', 'Class', 'count'), width='stretch')
 
 def team_statistics(df, options):
     mechs, maps, rosters, tournaments = st.tabs(['Mechs', 'Maps', 'Rosters', 'Tournaments'])
@@ -85,10 +84,10 @@ def team_statistics(df, options):
             team_data = filter_dataframe(map_stats, 'Team', team_name)
 
             column.altair_chart(
-                negative_horizontal_stacked_bar_chart_map_stats(team_data, team_name), use_container_width=True)
+                negative_horizontal_stacked_bar_chart_map_stats(team_data, team_name), width='stretch')
 
     with rosters:
-        df['Deaths'] = np.where(df['HealthPercentage'] == 0, 1, 0)
+        df['Deaths'] = (df['HealthPercentage'] == 0).astype(int)
         pilot_stats = df.groupby(['Username', 'TeamName'], as_index=False).agg(
             Score=('MatchScore','mean'),
             Tonnage=('Tonnage','mean'),
@@ -104,12 +103,12 @@ def team_statistics(df, options):
         df_height = 35 * (pilot_stats.shape[0] + 1) + 3
 
         pilot_stats = pilot_stats.style.format(subset=['Score', 'Tonnage', 'Kills', 'KMDDs', 'Assists', 'CDs', 'Deaths', 'DMG', 'TD'], formatter="{:.2f}")
-        st.dataframe(pilot_stats, hide_index=True, use_container_width=True, height=df_height)
+        st.dataframe(pilot_stats, hide_index=True, width='stretch', height=df_height)
     
     with tournaments:
         divisions = df[['Tournament', 'TeamName', 'Division']].drop_duplicates()
         df_height = 35 * (divisions.shape[0] + 1) + 3
-        st.dataframe(divisions, hide_index=True, use_container_width=True, height=df_height)
+        st.dataframe(divisions, hide_index=True, width='stretch', height=df_height)
 
 def general_statistics(df, options):
     tournaments_count = nunique(df, 'Tournament')

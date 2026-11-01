@@ -21,12 +21,28 @@ def display_form():
 
     submitted_text = form.text_area('Get API data for provided IDs:', placeholder='List of Match IDs', key='match_ids')
     match_ids = parse_match_ids(submitted_text)
-    button_pressed = form.form_submit_button('Submit', use_container_width=True)
+    button_pressed = form.form_submit_button('Submit', width='stretch')
 
     if button_pressed and not tournament:
         error('Tournament must be selected to connect pilot names to the teams they played for.')
     elif button_pressed:
-        batch_request(match_ids, tournament)
+        result = batch_request(match_ids, tournament)
+        uploaded = result['uploaded']
+        recalculation = result['recalculation']
+
+        if uploaded:
+            st.success(f"Uploaded {uploaded} new matches.")
+        else:
+            st.info("No new matches were uploaded.")
+
+        if recalculation.get('status') == 'done':
+            st.info(
+                f"Ratings recalculated for {recalculation['matches']} matches "
+                f"({recalculation['rows']} rows) from {recalculation['recalc_from']} "
+                f"in {recalculation['seconds']} seconds."
+            )
+        elif recalculation.get('status') == 'skipped':
+            st.info(f"No rating recalculation was needed. {recalculation.get('reason', '')}")
 
 back_button()
 header()

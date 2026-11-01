@@ -40,25 +40,25 @@ def teams_block(teams, team1_score, team2_score):
         column = columns[index]
         with column:
             df = pd.DataFrame(value)
-            st.dataframe(df, hide_index=True, use_container_width=True)
+            st.dataframe(df, hide_index=True, width='stretch')
         index += 1
 
-def display_match_details(id, details):
-    match_details = details['MatchDetails']
+def display_drop_details(id, details):
+    drop_details = details['MatchDetails']
     user_details = details['UserDetails']
     
-    team1_score = match_details['Team1Score']
-    team2_score = match_details['Team2Score']
-    dur_min, dur_sec = divmod(int(match_details['MatchDuration']), 60)
+    team1_score = drop_details['Team1Score']
+    team2_score = drop_details['Team2Score']
+    dur_min, dur_sec = divmod(int(drop_details['MatchDuration']), 60)
 
     metrics = {
         'ID': id,
-        'Map': match_details['Map'],
-        'Mode': match_details['GameMode'],
-        'Region': match_details['Region'],
+        'Map': drop_details['Map'],
+        'Mode': drop_details['GameMode'],
+        'Region': drop_details['Region'],
         '': '',
-        'Winner': f"Team {match_details['WinningTeam']}",
-        'Date': datetime.fromisoformat(match_details['CompleteTime']).strftime("%Y-%m-%d %H:%M:%S"),
+        'Winner': f"Team {drop_details['WinningTeam']}",
+        'Date': datetime.fromisoformat(drop_details['CompleteTime']).strftime("%Y-%m-%d %H:%M:%S"),
         'Duration': f"{dur_min:02d}:{dur_sec:02d}"
     }
     metrics_block(metrics, 4)
@@ -87,7 +87,7 @@ def display_match_details(id, details):
     spectators_block(spectators)
     teams_block(teams, team1_score, team2_score)
 
-def get_match_details(id_list):
+def get_drop_details(id_list):
     result = {}
     for match_id in id_list:
         json_data = fetch_api_data(match_id)
@@ -103,7 +103,7 @@ def json2df(json_list):
     mechs = mech_data()
 
     for id, json_data in json_list.items():
-        match_details = json_data['MatchDetails']
+        drop_details = json_data['MatchDetails']
         user_details = json_data['UserDetails']
         for line in user_details:
             if line['IsSpectator'] == True or line['MechItemID'] == 0:
@@ -121,7 +121,7 @@ def json2df(json_list):
                 'pilot': line['Username'],
                 'team': "",
                 'mech': mech,
-                'match': match_details,
+                'match': drop_details,
                 'details': line
             }
             new_line = new_record(data)
@@ -140,21 +140,21 @@ def download_button(details_list):
         file_name="data_dump.csv",
         mime='text/csv',
         type='primary',
-        use_container_width=True
+        width='stretch'
     )
 
 def display_inputs():
     match_ids = st.text_input('Enter match id', value=None, placeholder='Enter match ID', label_visibility='hidden')
-    button_pressed = st.button('Submit', use_container_width=True)
+    button_pressed = st.button('Submit', width='stretch')
 
     if button_pressed and not match_ids:
         error('Please, specify match ID to fetch data for.')
     elif button_pressed:
         id_list = parse_match_ids(match_ids)
-        details_list = get_match_details(id_list)
+        details_list = get_drop_details(id_list)
         download_button(details_list)
         for id, details in details_list.items():
-            display_match_details(id, details)
+            display_drop_details(id, details)
 
 header()
 display_inputs()

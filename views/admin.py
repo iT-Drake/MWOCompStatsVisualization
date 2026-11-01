@@ -1,6 +1,9 @@
 import streamlit as st
 
+from utility.version import __version__
+
 st.header('Admin page')
+st.caption(f'Version {__version__}')
 
 if st.button('Upload data >'):
     st.switch_page('views/upload.py')
@@ -16,5 +19,8 @@ if st.button('Compare rosters >'):
 
 if st.button('Calculate ELO >'):
     st.switch_page('views/calculate_elo.py')
+
+if st.button('Delete game >'):
+    st.switch_page('views/delete_game.py')
 
 # Intentional backup page

@@ -40,4 +40,4 @@ def leaderboard():
 
 main_header()
 charts()
-leaderboard()
+# leaderboard()

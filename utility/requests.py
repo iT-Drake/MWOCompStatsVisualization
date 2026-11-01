@@ -1,12 +1,14 @@
 import requests
 import pandas as pd
+
 from time import sleep
 from streamlit import cache_data
 
 from utility.datasources import mech_data, roster_links, team_rosters
-from utility.database import unique_match_ids, write_comp_data
+from utility.database import unique_match_ids, write_comp_data, write_watermark
 from utility.methods import error, convert_to_int
 from utility.globals import API_URL, API_KEY
+from utility.recalc import recalculate_ratings
 
 #---------------------------------------------------------------------
 # MWO API
@@ -60,7 +62,7 @@ def new_record(data):
 
     return new_record
 
-def match_data(id, match_details, user_details, tournament):
+def match_data(id, drop_details, user_details, tournament):
     lines = []
     mechs = mech_data()
     all_rosters = roster_links()
@@ -96,7 +98,7 @@ def match_data(id, match_details, user_details, tournament):
             'pilot': pilot,
             'team': team,
             'mech': mech,
-            'match': match_details,
+            'match': drop_details,
             'details': line
         }
         new_line = new_record(data)
@@ -122,9 +124,9 @@ def request_match_data(match_id, tournament):
     try:
         json_data = fetch_api_data(match_id)
         if json_data:
-            match_details = json_data['MatchDetails']
+            drop_details = json_data['MatchDetails']
             user_details = json_data['UserDetails']
-            data = match_data(match_id, match_details, user_details, tournament)
+            data = match_data(match_id, drop_details, user_details, tournament)
             df = pd.DataFrame(data)
             df.columns = match_data_columns()
     except requests.exceptions.JSONDecodeError as e:
@@ -142,6 +144,7 @@ def batch_request(match_ids, tournament):
     match_ids = list(dict.fromkeys(match_ids))
 
     unique_ids = unique_match_ids()
+    uploaded = 0
 
     for match_id in match_ids:
         id = convert_to_int(match_id)
@@ -151,10 +154,21 @@ def batch_request(match_ids, tournament):
         df = request_match_data(match_id, tournament)
         write_comp_data(df)
 
+        # Every uploaded match is marked, so an interrupted upload still leaves a
+        # marker behind for the recalculation to pick up
+        if not df.empty:
+            write_watermark(df['MatchID'].iloc[0], df['CompleteTime'].min())
+            uploaded += 1
+
         unique_ids.append(id)
 
         # API calls limited by 60 per minute
         sleep(1)
+
+    # >>> RATING RECALCULATION HOOK <<<
+    recalculation = recalculate_ratings()
+
+    return {'uploaded': uploaded, 'recalculation': recalculation}
 
 def mech_list():
     url = "https://static.mwomercs.com/api/mechs/list/dict.json"

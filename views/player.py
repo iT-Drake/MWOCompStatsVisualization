@@ -91,7 +91,7 @@ def player_teams(df, options):
         Score=('Score','sum')
     ).rename(columns={'Username': 'Player', 'TeamName': 'Team'})
 
-    st.dataframe(teams_data, hide_index=True, use_container_width=True)
+    st.dataframe(teams_data, hide_index=True, width='stretch')
 
 def player_mechs(df, options):
     for player in options['Username']:

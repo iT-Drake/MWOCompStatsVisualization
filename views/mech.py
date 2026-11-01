@@ -26,7 +26,7 @@ def calculate_kdr(dividend, divisor):
 def mechs_data(df):
     aggregation_method = 'mean'
 
-    df['Deaths'] = [1 if health == 0 else 0 for health in df['HealthPercentage']]
+    df['Deaths'] = (df['HealthPercentage'] == 0).astype(int)
     
     mech_stats = df.groupby(['Mech', 'Chassis'], as_index=False).agg(
         Tonnage=('Tonnage', 'mean'),
@@ -92,7 +92,7 @@ def mech_statistics(df, options):
     col1, col2, col3, col4 = st.columns([3, 1, 1, 1])
 
     with col1:
-        with st.popover("Column descriptions:", use_container_width=True):
+        with st.popover("Column descriptions:", width='stretch'):
             st.markdown('''
                 - `Tonnage`: Mech tonnage
                 - `MS`: Match Score (avg.)
@@ -110,14 +110,14 @@ def mech_statistics(df, options):
             ''')
 
     with col2:
-        if st.button("Previous", use_container_width=True):
+        if st.button("Previous", width='stretch'):
             if page_number - 1 < 0:
                 page_number = last_page
             else:
                 page_number -= 1
 
     with col4:
-        if st.button("Next", use_container_width=True):
+        if st.button("Next", width='stretch'):
             if page_number + 1 > last_page:
                 page_number = 0
             else:
@@ -141,7 +141,7 @@ def mech_statistics(df, options):
     merged_data = merged_data.style.format(subset=['Tonnage', 'MS', 'Kills', 'KMDDs', 'Assists', 'CD', 'Deaths', 'DMG', 'TD', 'WLR', 'KDR'], formatter="{:.2f}")
     column_order = ['Rank', 'Mech', 'Chassis', 'Tonnage', 'MS', 'Kills', 'KMDDs', 'Assists', 'CD', 'Deaths', 'KDR', 'DMG', 'TD', 'WLR', 'Uses', 'Score']
 
-    st.dataframe(merged_data, hide_index=True, column_order=column_order, use_container_width=True, height=df_height)
+    st.dataframe(merged_data, hide_index=True, column_order=column_order, width='stretch', height=df_height)
 
 header()
 df, options = filters()

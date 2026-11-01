@@ -1,4 +1,4 @@
-altair==5.4.1
+altair==6.0.0
 attrs==24.2.0
 blinker==1.8.2
 cachetools==5.5.0
@@ -20,7 +20,7 @@ markdown-it-py==3.0.0
 MarkupSafe==2.1.5
 matplotlib==3.9.2
 mdurl==0.1.2
-narwhals==1.6.2
+narwhals==2.18.1
 numpy==2.1.0
 openskill==6.2.0
 packaging==24.1
@@ -40,7 +40,7 @@ rich==13.8.0
 rpds-py==0.20.0
 six==1.16.0
 smmap==5.0.1
-streamlit==1.38.0
+streamlit==1.56.0
 tenacity==8.5.0
 toml==0.10.2
 tornado==6.4.1
