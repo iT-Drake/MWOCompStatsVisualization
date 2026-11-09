@@ -2,7 +2,7 @@ import streamlit as st
 
 from utility.methods import filter_dataframe, unique
 
-def filters_block(df, options, multiselect=True):
+def filters_block(df, options, multiselect=True, on_change=None):
     size = len(options)
     columns = st.columns(size)
     col_index = 0
@@ -17,9 +17,9 @@ def filters_block(df, options, multiselect=True):
             values = unique(df, key)
             placeholder = representation if representation else key
             if multiselect:
-                selected_values = st.multiselect('Select value', values, placeholder=placeholder, label_visibility='hidden')
+                selected_values = st.multiselect('Select value', values, placeholder=placeholder, label_visibility='hidden', on_change=on_change)
             else:
-                selected_values = st.selectbox('Select value', values, index=None, placeholder=placeholder, label_visibility='hidden')
+                selected_values = st.selectbox('Select value', values, index=None, placeholder=placeholder, label_visibility='hidden', on_change=on_change)
 
             if selected_values:
                 df = filter_dataframe(df, key, selected_values)
@@ -42,11 +42,13 @@ def metrics_block(metrics, columns = None):
     index = 0
     for key, value in metrics.items():
         column = collection[index]
+        visibility = 'hidden' if not key else 'visible'
+        label = key or 'layout_spacer'
 
         if isinstance(value, tuple):
-            column.metric(key, value[0], value[1])
+            column.metric(label, value[0], value[1], label_visibility=visibility)
         else:
-            column.metric(key, value)
+            column.metric(label, value, label_visibility=visibility)
 
         index += 1
         if index >= columns:
