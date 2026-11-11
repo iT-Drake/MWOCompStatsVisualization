@@ -80,21 +80,6 @@ def display_data(df, leaderboard):
 
         # ----------------------------------------------------
 
-        chart = alt.Chart(df).mark_bar(opacity=0.6, color='seagreen').encode(
-            alt.X("Performance:Q", bin=alt.Bin(maxbins=30), title="Performance Weight"),
-            alt.Y('count()', title="Number of Player-Games"),
-        ).properties(
-            title="Distribution of Performance Weights",
-            width=700,
-            height=400
-        )
-
-        rule = alt.Chart(pd.DataFrame({'x': [1.0]})).mark_rule(color='red', strokeDash=[4,4]).encode(x='x:Q')
-
-        st.altair_chart(chart + rule, width='stretch')
-
-        # ----------------------------------------------------
-
         # chart = alt.Chart(df).mark_area(
         #     opacity=0.4,
         #     interpolate='monotone',
@@ -189,14 +174,15 @@ def display_data(df, leaderboard):
             game_range = st.slider(
                 "Games range",
                 min_value=1,
-                max_value=max_games,
+                # Streamlit needs min < max; a one-game pilot would otherwise crash the page
+                max_value=max(2, max_games),
                 value=(1, max_games)
             )
 
             filtered_pilot_data = pilot_data[
                 (pilot_data['GameNumber'] >= game_range[0]) & 
                 (pilot_data['GameNumber'] <= game_range[1])
-            ]
+            ].copy()
 
             x_scale = alt.Scale(domain=[game_range[0], game_range[1]], nice=True)
 
@@ -223,28 +209,30 @@ def display_data(df, leaderboard):
 
             domain = ['PilotRating', 'OpponentRating', 'TeamRating']
             division_scale = alt.Scale(scheme='dark2')
-            
+
+            tooltip_fields = [
+                alt.Tooltip('MatchID:N', title='ID'),
+                alt.Tooltip('CompleteTime', title='Date', format='%Y-%m-%d'),
+                alt.Tooltip('Tournament', title='Tournament'),
+                alt.Tooltip('Division', title='Division'),
+                alt.Tooltip('TeamName', title='Team'),
+                alt.Tooltip('Opponent', title='Opponent'),
+                alt.Tooltip('Map', title='Map'),
+                alt.Tooltip('MatchResult', title='Result'),
+                alt.Tooltip('PilotRating', title='Rating', format='.2f'),
+                alt.Tooltip('RatingChange', title='Rating change', format='.2f'),
+                alt.Tooltip('Performance', title='Performance', format='.2f'),
+                alt.Tooltip('TeamRating', title='Team rating', format='.2f'),
+                alt.Tooltip('OpponentRating', title='Opponent rating', format='.2f'),
+            ]
+
             # Baseline data and chart shape
             base = alt.Chart(filtered_pilot_data).transform_fold(
                 domain,
                 as_=['RatingType', 'RatingValue'] 
             ).encode(
                 x=alt.X('GameNumber:Q', scale=x_scale, title='Game Sequence'),
-                tooltip=[
-                    alt.Tooltip('MatchID:N', title='ID'),
-                    alt.Tooltip('CompleteTime', title='Date', format='%Y-%m-%d'),
-                    alt.Tooltip('Tournament', title='Tournament'),
-                    alt.Tooltip('Division', title='Division'),
-                    alt.Tooltip('TeamName', title='Team'),
-                    alt.Tooltip('Opponent', title='Opponent'),
-                    alt.Tooltip('Map', title='Map'),
-                    alt.Tooltip('MatchResult', title='Result'),
-                    alt.Tooltip('PilotRating', title='Rating', format='.2f'),
-                    alt.Tooltip('RatingChange', title='Rating change', format='.2f'),
-                    alt.Tooltip('Performance', title='Performance', format='.2f'),
-                    alt.Tooltip('TeamRating', title='Team rating', format='.2f'),
-                    alt.Tooltip('OpponentRating', title='Opponent rating', format='.2f'),
-                ]
+                tooltip=tooltip_fields
             ).properties(
                 title=f"ELO Rating History for {pilot}, {games} games.",
                 height=800
@@ -326,6 +314,75 @@ def display_data(df, leaderboard):
             )
 
             event_data = st.altair_chart(chart, width='stretch', on_select='rerun')
+
+            # ----------------------------------------------------
+            # EXPERIMENT: the same history with stems instead of the two
+            # rating lines. A stem runs from the dot by the team-vs-opponent
+            # gap: red downwards when the pilot's team was the stronger side
+            # (a weaker opponent), green upwards when the opponents were.
+            # Its length is the gap, so a bigger difference draws a longer
+            # line, and only the direction has to be read at a glance.
+            # ----------------------------------------------------
+
+            stems_data = filtered_pilot_data.copy()
+            stems_data['Matchup'] = 'Stronger opponent'
+            stems_data.loc[stems_data['TeamDifference'] > 0, 'Matchup'] = 'Weaker opponent'
+            stems_data['StemEnd'] = stems_data['PilotRating'] - stems_data['TeamDifference']
+
+            # The stems reach past the rating line, so the axis is fitted to
+            # both ends rather than to the ratings alone.
+            stem_min = min(stems_data['PilotRating'].min(), stems_data['StemEnd'].min())
+            stem_max = max(stems_data['PilotRating'].max(), stems_data['StemEnd'].max())
+            stem_padding = (stem_max - stem_min) * 0.05
+            stem_min -= stem_padding
+            stem_max += stem_padding
+            if stem_max == stem_min:
+                stem_min -= 1
+                stem_max += 1
+
+            stem_base = alt.Chart(stems_data).encode(
+                x=alt.X('GameNumber:Q', scale=x_scale, title='Game Sequence'),
+                y=alt.Y('PilotRating:Q', title='Rating',
+                        scale=alt.Scale(domain=[stem_min, stem_max], zero=False)),
+                tooltip=tooltip_fields
+            )
+
+            opponent_stems = stem_base.mark_rule(
+                strokeWidth=2,
+                opacity=0.55
+            ).encode(
+                y2=alt.Y2('StemEnd:Q'),
+                color=alt.Color(
+                    'Matchup:N',
+                    scale=alt.Scale(domain=['Weaker opponent', 'Stronger opponent'],
+                                    range=['firebrick', 'seagreen']),
+                    title='Opponent'
+                )
+            )
+
+            compact_line = stem_base.mark_line(strokeWidth=3, color='darkslateblue')
+
+            compact_points = stem_base.mark_point(size=60, filled=True).encode(
+                color=alt.Color('Division:N', scale=division_scale, title='Division')
+            )
+
+            compact_chart = alt.layer(
+                opponent_stems,
+                compact_line,
+                compact_points,
+                year_labels,
+            ).resolve_scale(
+                x='shared',
+                color='independent'
+            )
+
+            st.markdown('#### Rating history, compact version')
+            st.caption('Same line and dots. The team and opponent rating lines are replaced by a '
+                       'stem whose length is the team-vs-opponent rating gap: red under the dot '
+                       'means the pilot\'s team was rated higher (weaker opponent), green above '
+                       'means the opponents were.')
+            st.altair_chart(compact_chart, width='stretch')
+
             selected_data = event_data[root_key][selection_key]
             if selected_data:
                 display_match_data(df, selected_data)
