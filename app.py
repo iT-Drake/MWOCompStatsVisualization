@@ -1,6 +1,6 @@
 import streamlit as st
 
-st.logo('./img/Logo.png', icon_image='./img/Logo.png')
+st.logo('./static/Logo.png', icon_image='./static/Logo.png')
 st.set_page_config(page_title="Stats Tool", layout='wide')
 
 home_page = st.Page('views/home.py', icon=":material/home:", title='Home', default=True)

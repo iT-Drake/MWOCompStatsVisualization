@@ -7,7 +7,7 @@
 <br/>
 <div align="center">
     <a href="https://github.com/iT-Drake/MWOCompStatsVisualization">
-        <img src="img/Logo.png" alt="Logo" width="480" height="60">
+        <img src="static/Logo.png" alt="Logo" width="480" height="60">
     </a>
     <h3 align="center">MWO Competitive Stats Visualization</h3>
     <p align="center">
@@ -30,7 +30,7 @@
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
-![Application](img/Application.png)
+![Application](static/Application.png)
 
 This application is designed to fetch API data, store it during the tournament and visualize stats for teams and pilots.
 
