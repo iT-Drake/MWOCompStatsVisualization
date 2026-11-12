@@ -1,3 +1,5 @@
+import re
+
 import streamlit as st
 import pandas as pd
 
@@ -5,6 +7,7 @@ from utility.blocks import metrics_block, winner_label
 from utility.matches import (
     divisions_in, drop_index, opponents_of, pair_drops, rows_with_signature, team_label, teams_in)
 from utility.methods import error
+from utility.requests import match_data_columns
 
 # The same green Streamlit uses for `:green[...]`, so a table cell and a markdown line match.
 WINNER_COLOUR = '#09ab3b'
@@ -76,6 +79,10 @@ def health_label(value):
 def table_height(rows):
     return 35 * (rows + 1) + 3
 
+def file_part(text):
+    """A label as a file-name fragment: letters and digits kept, everything else collapsed."""
+    return re.sub(r'[^A-Za-z0-9]+', '-', text).strip('-')
+
 #---------------------------------------------------------------------
 # DISPLAY
 #---------------------------------------------------------------------
@@ -115,6 +122,10 @@ def drops_table(match, rows):
         column_config={'Kills 1': 'Kills', 'Kills 2': 'Kills', 'Result': None})
 
 def pilots_table(pilots):
+    # Lightest first, so the two tables of a drop line up by weight class instead of by the
+    # order the rows happen to be stored in. Same order as WEIGHT_CLASSES.
+    pilots = pilots.sort_values(['Tonnage', 'Mech'])
+
     table = pd.DataFrame({
         'Tag': pilots['TeamName'].map(tag_label),
         'Pilot': pilots['Username'],
@@ -200,6 +211,30 @@ def pilot_table(rows):
         display, hide_index=True, width='stretch', height=height,
         column_order=['Team', 'Pilot', 'Games', 'Kills', 'KMDDs', 'Assists', 'CDs', 'DMG', 'TD', 'MS', 'Deaths'])
 
+def export_frame(rows):
+    """One row per pilot per drop, in the columns the upload writes.
+
+    Same columns as the CSV on the drop details page, so the two downloads can be opened
+    side by side. Ratings are left out on purpose: no other export carries them.
+    """
+    frame = rows.loc[:, match_data_columns()].copy()
+
+    return frame.sort_values(['CompleteTime', 'TeamName', 'Tonnage', 'Username'])
+
+def download_button(rows, tournament, first, second):
+    frame = export_frame(rows)
+    csv = frame.to_csv(index=False).encode('utf-8')
+    name = f'{file_part(tournament)}_{file_part(team_label(first))}_vs_{file_part(team_label(second))}.csv'
+
+    st.download_button(
+        label='Download data as CSV',
+        data=csv,
+        file_name=name,
+        mime='text/csv',
+        type='primary',
+        width='stretch'
+    )
+
 def display_pair(index, tournament, first, second):
     drops = pair_drops(index, tournament, first, second)
     if drops.empty:
@@ -211,6 +246,11 @@ def display_pair(index, tournament, first, second):
     series1 = sum(1 for _, match in matches if wins_for(match, first) > wins_for(match, second))
     series2 = sum(1 for _, match in matches if wins_for(match, second) > wins_for(match, first))
     tied = len(matches) - series1 - series2
+
+    rows = rows_with_signature(drops.index)
+    rows['Deaths'] = (rows['HealthPercentage'] == 0).astype(int)
+
+    download_button(rows, tournament, first, second)
 
     metrics = {
         'Matches': len(matches),
@@ -224,8 +264,6 @@ def display_pair(index, tournament, first, second):
         noun = 'match' if tied == 1 else 'matches'
         st.caption(f'{tied} {noun} between them ended level on drops.')
 
-    rows = rows_with_signature(drops.index)
-    rows['Deaths'] = (rows['HealthPercentage'] == 0).astype(int)
     st.divider()
 
     for number, (_, match) in enumerate(matches, start=1):
