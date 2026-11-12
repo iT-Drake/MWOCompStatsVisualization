@@ -457,9 +457,6 @@ def matches_tab(view):
 
     height = 35 * (len(table) + 1) + 3
 
-    st.caption(f'{len(table)} games, newest first. Performance is the weight the rating gave '
-               f'that game: 100 % is an average game for the pilot\'s team.')
-
     st.dataframe(
         table.style.format(
             subset=['Performance', 'Rating change'],
@@ -504,8 +501,6 @@ def mechs_tab(view):
 
     height = 35 * (len(table) + 1) + 3
 
-    st.caption(f'{len(table)} mechs played, sorted by games.')
-
     st.dataframe(
         table.style.format(
             subset=['WLR', 'Kills', 'KMDDs', 'Assists', 'CD', 'DMG', 'MS', 'Deaths'],
@@ -535,8 +530,6 @@ def teams_tab(view):
     table = table.sort_values('LastPlayed', ascending=False).drop(columns='LastPlayed')
 
     height = 35 * (len(table) + 1) + 3
-
-    st.caption(f'{len(table)} tournament teams, most recent first.')
 
     st.dataframe(
         table.style.format(subset=['WLR'], formatter='{:.2f}'),
