@@ -20,9 +20,6 @@ MATCH_SELECTION = 'match_data'
 
 def header():
     st.header('Players')
-    st.caption('Each filter narrows the next one: a division limits the teams, a team limits '
-               'the pilots. The tabs describe the selected scope; the pilot card above them '
-               'always describes the whole career.')
 
 def filters(df):
     # Dict order is the cascade, so Username is last and only offers the pilots of
@@ -75,12 +72,11 @@ def identity_block(pilot):
         'Rank': f'#{rank}' if rank else 'Unranked',
         'Games': int(row['Games']),
         'Tournaments': int(row['Tournaments']),
+        'Last played': row["Tournament"],
+        'Division': row["Division"],
     }
-    metrics_block(metrics, columns=4)
-
-    st.caption(f'{row["Team"]} · Division {row["Division"]} · '
-               f'last played {row["LastPlayed"]:%Y-%m-%d} ({row["Tournament"]})')
-
+    metrics_block(metrics, columns=6)
+    
     if rank is None:
         st.caption(f'Not on the ladder: it takes at least {MIN_GAMES} games and a match in the '
                    f'last {ACTIVE_DAYS // 365} years. The rating above is the stored one either '
@@ -364,9 +360,7 @@ def percentiles_block(view):
     st.divider()
     st.caption('Percentile inside the weight class, against pilots with at least '
                f'{MIN_GAMES} games in that class: 84 % means 84 % of them average less. '
-               'Survival counts games not died in, so every column reads higher = better. '
-               f'A class needs {MIN_GAMES} games in the selected scope to be ranked at all; '
-               'the games column is what the rest of the row is based on.')
+               'Survival counts games not died in, so every column reads higher = better. ')
 
     st.dataframe(
         table,
@@ -422,19 +416,14 @@ def overview_tab(df, history, view):
     chart = rating_history_chart(history, scope, window)
     event = st.altair_chart(chart, width='stretch', on_select='rerun')
 
-    visible = nunique(scope, 'MatchID')
-    caption = ('Dots are games, coloured by division. A stem runs from the dot by the '
-               'team-vs-opponent rating gap: red below the dot means the pilot\'s team was '
-               'the stronger side, green above means the opponents were. The vertical axis '
-               'is the whole career, the horizontal one fits the games on screen. Click a '
-               'game for its details.')
-    if visible != career_games:
-        caption += f' Showing {visible} of {career_games} games.'
-    st.caption(caption)
-
+    caption = ('Games slider changes the scope of the chart. Each game is colored by division and is clickable. '
+               'Click a game to see drop details.')
+    
     selected = (event or {}).get('selection', {}).get(MATCH_SELECTION, [])
     if selected:
         match_details(df, scope, selected[0]['MatchID'])
+    else:
+        st.caption(caption)
 
 def matches_tab(view):
     """The game log: the receipts behind the chart, newest first."""
