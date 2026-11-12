@@ -4,6 +4,11 @@ class SortingOption(Enum):
     MatchScore = 'Match score'
     WLR = 'Win-Loss ratio'
     Damage = 'Damage'
+    Kills = 'Kills'
+    Deaths = 'Deaths'
+    KDR = 'Kills to deaths ratio'
+    Games = 'Games'
+    Rating = 'Rating'
 
     def __str__(self):
         return self.value

@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 
-from utility.blocks import metrics_block
+from utility.blocks import metrics_block, winner_label
 from utility.matches import (
     divisions_in, drop_index, opponents_of, pair_drops, rows_with_signature, team_label, teams_in)
 from utility.methods import error
@@ -75,10 +75,6 @@ def health_label(value):
 
 def table_height(rows):
     return 35 * (rows + 1) + 3
-
-def winner_label(text, won):
-    """Green when the side won the drop, plain otherwise."""
-    return f':green[{text}]' if won else text
 
 #---------------------------------------------------------------------
 # DISPLAY

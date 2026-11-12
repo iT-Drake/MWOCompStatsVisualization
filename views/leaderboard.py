@@ -1,12 +1,12 @@
 import streamlit as st
 
 from utility.admission import MIN_GAMES, ACTIVE_DAYS, eligible_pilots
-from utility.caching import CACHE_TTL
 from utility.database import read_comp_data
 from utility.blocks import filters_block
 from utility.methods import safe_division
 from utility.globals import get_leaderboard_size, get_leaderboard_default_sorting, get_leaderboard_aggregation_method
 from utility.enums import SortingOption, AggregationMethod
+from utility.ranking import current_ratings
 
 SORT_KEY = 'leaderboard_sorting'
 PAGE_KEY = 'page_number'
@@ -23,8 +23,6 @@ def reset_page():
 
 def header():
     st.header('Stats')
-    st.caption(f'A pilot qualifies with at least {MIN_GAMES} games and a match in the last '
-               f'{ACTIVE_DAYS // 365} years, the same rule as the ladder.')
 
 def prepare_data():
     """
@@ -45,6 +43,13 @@ def get_sorting_settings(value):
     match value:
         case SortingOption.WLR: return ['WLR', 'Games', 'MS'], [False, False, False]
         case SortingOption.Damage: return ['DMG', 'Games', 'MS'], [False, True, False]
+        case SortingOption.Kills: return ['Kills', 'Games', 'MS'], [False, True, False]
+        # Deaths is the only column where a high value is bad, so it is read the other
+        # way: fewest first. Every other option puts the better number on top.
+        case SortingOption.Deaths: return ['Deaths', 'Games', 'MS'], [True, False, False]
+        case SortingOption.KDR: return ['KDR', 'Games', 'MS'], [False, True, False]
+        case SortingOption.Games: return ['Games', 'MS', 'Kills'], [False, False, False]
+        case SortingOption.Rating: return ['Rating', 'Games', 'MS'], [False, False, False]
         case _: return ['MS', 'Games'], [False, True]
 
 def calculate_wlr(values):
@@ -91,19 +96,6 @@ def pilots_data(df, method):
     pilot_stats['KDR'] = calculate_kdr(pilot_stats['TotalKills'], pilot_stats['TotalDeaths'])
     
     return pilot_stats
-
-@st.cache_data(ttl=CACHE_TTL)
-def current_ratings():
-    """
-    The rating a pilot carries now, taken from the whole database. Filters must not
-    rewrite it: a class filter would otherwise report the rating after the pilot's
-    last game in that class, which can be years old.
-    """
-    df = read_comp_data().sort_values(['Username', 'CompleteTime'])
-    latest = df.groupby('Username').tail(1)
-
-    return latest[['Username', 'PilotRating']].rename(
-        columns={'Username': 'Pilot', 'PilotRating': 'Rating'})
 
 def leaderboard(df):
     method = aggregation_method()

@@ -1,11 +1,11 @@
 import streamlit as st
-import pandas as pd
 
-from utility.admission import ACTIVE_DAYS, MIN_GAMES, eligible_pilots
-from utility.caching import CACHE_TTL
+from utility.admission import ACTIVE_DAYS, MIN_GAMES
 from utility.database import read_comp_data
-from utility.blocks import filters_block
-from utility.globals import get_leaderboard_size, RATING_BASE
+from utility.blocks import change_color, filters_block
+from utility.documents import DOCS, expander_document
+from utility.globals import get_leaderboard_size
+from utility.ranking import ladder_data
 
 # Admission to the ladder: a pilot needs games behind the rating and has to
 # still be playing. Both are measured on the whole database, not on the filters.
@@ -18,57 +18,15 @@ def reset_page():
 
 def header():
     st.header('Ladder')
-    st.caption(f'Ranked by rating. A pilot qualifies with at least {MIN_GAMES} games '
-               f'and a match in the last {ACTIVE_DAYS // 365} years.')
 
 def filters():
     df = read_comp_data()
     options = {'Tournament': None, 'Division': None}
     return filters_block(df, options, on_change=reset_page)
 
-@st.cache_data(ttl=CACHE_TTL)
-def ladder_data():
-    """
-    One row per qualifying pilot: the rating they carry now, how their most
-    recent tournament moved it, and which tournament that was.
-    """
-    df = read_comp_data().sort_values(['Username', 'CompleteTime'])
-    games = df.groupby('Username')['MatchID'].nunique()
-    latest = df.groupby('Username').tail(1).set_index('Username')
-
-    # Net effect of the most recent tournament: the rating after it minus the
-    # rating the pilot carried into its first game. A debut starts from the
-    # rating base, so a first tournament reports what it was worth.
-    df['PrevRating'] = df.groupby('Username')['PilotRating'].shift(1)
-    last_tournament = df.groupby('Username')['Tournament'].last()
-    before_last = df[df['Tournament'] == df['Username'].map(last_tournament)] \
-        .groupby('Username').head(1).set_index('Username')['PrevRating']
-
-    ladder = pd.DataFrame({
-        'Pilot': latest.index,
-        'Games': latest.index.map(games),
-        'Rating': latest['PilotRating'],
-        'Tournament': latest['Tournament'],
-        'Division': latest['Division'],
-    })
-    ladder['Change'] = ladder['Rating'] - ladder['Pilot'].map(before_last).fillna(RATING_BASE)
-
-    ladder = ladder[ladder['Pilot'].isin(eligible_pilots())]
-    ladder = ladder.sort_values(['Rating', 'Pilot'], ascending=[False, True], ignore_index=True)
-    ladder.insert(0, 'Rank', range(1, len(ladder) + 1))
-
-    return ladder[['Rank', 'Pilot', 'Games', 'Rating', 'Change', 'Tournament', 'Division']]
-
 def page_count(rows, page_size):
     # A full last page must not produce an empty page after it.
     return max((rows - 1) // page_size, 0)
-
-def change_color(value):
-    if value > 0:
-        return 'color: #1a7f37'
-    if value < 0:
-        return 'color: #c0392b'
-    return ''
 
 def ladder_table(view, selected):
     def highlight(row):
@@ -161,5 +119,14 @@ def ladder_page():
 
     ladder_table(view.iloc[start_idx:end_idx], selected)
 
+def rating_document():
+    """The rating article, folded away under the table."""
+    document = DOCS / 'rating.md'
+    if not document.is_file():
+        return
+
+    expander_document(document)
+
 header()
+rating_document()
 ladder_page()
