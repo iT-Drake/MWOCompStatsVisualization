@@ -1,17 +1,21 @@
 from enum import Enum
 
 class SortingOption(Enum):
-    Score = 'Score'
-    WLR = 'Win-Loss ratio'
     MatchScore = 'Match score'
+    WLR = 'Win-Loss ratio'
     Damage = 'Damage'
+    Kills = 'Kills'
+    Deaths = 'Deaths'
+    KDR = 'Kills to deaths ratio'
+    Games = 'Games'
+    Rating = 'Rating'
 
     def __str__(self):
         return self.value
     
     @classmethod
     def Default(cls):
-        return cls.Score
+        return cls.MatchScore
 
 class AggregationMethod(Enum):
     Mean = 'Average values'

@@ -10,6 +10,7 @@ the app would be reading it underneath.
 ```
 python3 migrations/migrate.py --dry-run     # prove the statements, write nothing
 python3 migrations/migrate.py               # apply
+sqlite3 database.sqlite3 "VACUUM;"          # shrinks database
 ```
 
 `--db` is optional and defaults to `DB_NAME` from `.streamlit/secrets.toml`.
@@ -44,7 +45,11 @@ read a version out of a table that a migration would have to create first. Its
 | 0 | before 0.4.0 | no rating columns, no `Watermarks` |
 | 1 | 0.4.0 | six rating columns on `CompData` (`m001`) |
 | 2 | 0.5.0 | `Watermarks` table (`m002`); `Metadata` appears with the tool |
-| 3 | 0.6.0 | *planned* — drop the retired `Rating` / `Rating_change` columns |
+| 3 | 0.6.0 | drop the retired `Rating` / `Rating_change` columns (`m003`); run `VACUUM` by hand afterwards |
+
+`m003` drops columns with `ALTER TABLE ... DROP COLUMN`, which SQLite has had since
+3.35 (the project venv runs 3.35.5). Older SQLite refuses the statement and the runner
+reports it — recreate the table instead of working around it.
 
 Production was on 0.4.0 when the tool shipped, so its first run creates
 `Metadata`, finds the rating columns already there and stamps `1`, then creates

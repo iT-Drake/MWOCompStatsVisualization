@@ -89,8 +89,8 @@ def team_statistics(df, options):
     with rosters:
         df['Deaths'] = (df['HealthPercentage'] == 0).astype(int)
         pilot_stats = df.groupby(['Username', 'TeamName'], as_index=False).agg(
-            Score=('MatchScore','mean'),
             Tonnage=('Tonnage','mean'),
+            MS=('MatchScore','mean'),
             Kills=('Kills','mean'),
             KMDDs=('KillsMostDamage','mean'),
             Assists=('Assists','mean'),
@@ -102,7 +102,7 @@ def team_statistics(df, options):
         )
         df_height = 35 * (pilot_stats.shape[0] + 1) + 3
 
-        pilot_stats = pilot_stats.style.format(subset=['Score', 'Tonnage', 'Kills', 'KMDDs', 'Assists', 'CDs', 'Deaths', 'DMG', 'TD'], formatter="{:.2f}")
+        pilot_stats = pilot_stats.style.format(subset=['Tonnage', 'MS', 'Kills', 'KMDDs', 'Assists', 'CDs', 'Deaths', 'DMG', 'TD'], formatter="{:.2f}")
         st.dataframe(pilot_stats, hide_index=True, width='stretch', height=df_height)
     
     with tournaments:
@@ -114,21 +114,23 @@ def general_statistics(df, options):
     tournaments_count = nunique(df, 'Tournament')
     teams_count = nunique(df, 'TeamName')
 
-    team_data = df[['MatchID', 'TeamName', 'Score']].drop_duplicates()
-    score_sum = team_data.groupby('TeamName')['Score'].sum()
-    score_team = score_sum.idxmax()
-    score_value = int(score_sum.max())
-
     groupped_data = df.groupby('TeamName')
     kills_sum = groupped_data['Kills'].sum()
     kills_team = kills_sum.idxmax()
     kills_value = int(kills_sum.max())
 
+    # The two team crowns are cumulative by design: they highlight a name that kept
+    # turning up, which is the point of the block. A group is one TeamName, so a
+    # roster that renamed itself starts over.
+    players_count = groupped_data['Username'].nunique()
+    players_team = players_count.idxmax()
+    players_value = int(players_count.max())
+
     col1, col2, col3, col4 = st.columns(4)
     col1.metric('Tournaments', tournaments_count)
     col2.metric('Teams', teams_count)
-    col3.metric('Highest score', score_team, score_value, delta_color='off')
-    col4.metric('Most kills', kills_team, kills_value, delta_color='off')
+    col3.metric('Most kills', kills_team, kills_value, delta_color='off')
+    col4.metric('Most players fielded', players_team, players_value, delta_color='off')
 
 header()
 df, options = filters()

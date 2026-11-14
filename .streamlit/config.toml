@@ -1,3 +1,9 @@
 [browser]
 
 gatherUsageStats = false
+
+[server]
+
+# Serves the `static/` folder so images referenced from docs/ markdown resolve;
+# `st.markdown` cannot read local files, the browser asks for `app/static/<file>`.
+enableStaticServing = true

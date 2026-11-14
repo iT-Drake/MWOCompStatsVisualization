@@ -1,7 +1,9 @@
 import streamlit as st
 import sqlite3 as sql
+import altair as alt
+import pandas as pd
 
-from utility.database import read_comp_data, ensure_rating_columns, run_query
+from utility.database import fetch_comp_data, read_comp_data, ensure_rating_columns, run_query
 from utility.methods import parse_match_ids
 from utility.blocks import metrics_block
 
@@ -100,6 +102,44 @@ def calculate_skill(df, conn):
 
     run_query(conn, "DROP TABLE temp_table")
 
+def performance_distribution():
+    st.markdown('#### Performance weight distribution')
+    st.caption('The weight is centred per team, so every drop has a team mean of 1.0. A division '
+               'that is wider or off-centre means its yardstick differs, not its ratings.')
+
+    # Unchanged fetch, not the cached frame: after a recalculation the cache keeps the old
+    # weights for up to CACHE_TTL, which is exactly when this chart is worth looking at.
+    df = fetch_comp_data()
+    divisions = sorted(df['Division'].dropna().unique())
+    selection = st.selectbox('Division', ['All divisions', *divisions], key='performance_division')
+    data = df if selection == 'All divisions' else df[df['Division'] == selection]
+
+    # Fixed edges for every division, so the bins never move between selections. Taken from
+    # the whole frame and floored to 0.05, so a wider formula range is not clipped either.
+    low = round(0.05 * (df['Performance'].min() // 0.05), 2)
+    high = round(0.05 * (df['Performance'].max() // 0.05 + 1), 2)
+
+    chart = alt.Chart(data).mark_bar(opacity=0.6, color='seagreen').encode(
+        alt.X('Performance:Q', bin=alt.Bin(maxbins=30, extent=[low, high]),
+              title='Performance Weight'),
+        alt.Y('count()', title='Number of Player-Games'),
+    ).properties(
+        title=f'Distribution of Performance Weights - {selection}',
+        width=700,
+        height=400
+    )
+
+    rule = alt.Chart(pd.DataFrame({'x': [1.0]})).mark_rule(
+        color='red', strokeDash=[4, 4]).encode(x='x:Q')
+
+    st.altair_chart(chart + rule, width='stretch')
+
+    st.caption(
+        f'{len(data):,} player-games | mean {data["Performance"].mean():.3f} | '
+        f'sd {data["Performance"].std():.3f} | '
+        f'5-95% {data["Performance"].quantile(0.05):.3f} - {data["Performance"].quantile(0.95):.3f}'
+    )
+
 def check_match_stats(df, conn):
     match_ids = st.text_input('Enter match id', value=None, placeholder='Enter match ID', label_visibility='hidden')
     button_pressed = st.button('Check', width='stretch')
@@ -175,6 +215,7 @@ conn = sql.connect(DB_NAME)
 # update_columns(conn)
 
 calculate_skill(COMP_DATA, conn)
+performance_distribution()
 check_match_stats(COMP_DATA, conn)
 
 conn.close()

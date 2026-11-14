@@ -57,7 +57,7 @@ def display_drop_details(id, details):
         'Mode': drop_details['GameMode'],
         'Region': drop_details['Region'],
         '': '',
-        'Winner': f"Team {drop_details['WinningTeam']}",
+        'Winner': f"Team {drop_details['WinningTeam']}" if drop_details['WinningTeam'] else 'Draw',
         'Date': datetime.fromisoformat(drop_details['CompleteTime']).strftime("%Y-%m-%d %H:%M:%S"),
         'Duration': f"{dur_min:02d}:{dur_sec:02d}"
     }
@@ -144,11 +144,11 @@ def download_button(details_list):
     )
 
 def display_inputs():
-    match_ids = st.text_input('Enter match id', value=None, placeholder='Enter match ID', label_visibility='hidden')
+    match_ids = st.text_input('Enter match id', value=None, placeholder='Enter drop IDs', label_visibility='hidden')
     button_pressed = st.button('Submit', width='stretch')
 
     if button_pressed and not match_ids:
-        error('Please, specify match ID to fetch data for.')
+        error('Please, specify drop IDs to fetch data for.')
     elif button_pressed:
         id_list = parse_match_ids(match_ids)
         details_list = get_drop_details(id_list)

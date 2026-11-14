@@ -1,9 +1,8 @@
 import streamlit as st
-import pandas as pd
 
 from utility.database import read_comp_data
-from utility.methods import nunique, unique
-from utility.charts import line_chart_submitted_games
+from utility.documents import DOCS, expander_document, markdown_document, patch_note_paths
+from utility.methods import nunique
 from utility.blocks import metrics_block
 
 def header():
@@ -29,36 +28,35 @@ def general_statistics(df):
 
     st.divider()
 
+def patch_notes_block():
+    """Newest release inline, the rest folded away once there are enough of them."""
+    notes = patch_note_paths()
+    if not notes:
+        return
+
+    st.header('What changed')
+
+    # A couple of notes fit on the page; a pile of them does not.
+    show_all = len(notes) < 5
+    for position, path in enumerate(notes):
+        if position == 0 or show_all:
+            markdown_document(path, level='subheader')
+        else:
+            expander_document(path)
+
 def introduction():
-    st.header("Introduction to the tool")
+    page = DOCS / 'introduction.md'
+    if not page.is_file():
+        st.caption('Add `docs/introduction.md` to fill this section.')
+        return
 
-    st.write("The tool contains all the data from major competitive tournaments.")
-    st.write("There are a few pages that help you dig through all the games and find the stats you need:")
-    st.markdown("""
-                - `Tournaments`: you can find most used mechs and chassis and general tonnage breakdow;
-                - `Leaderboard`: performance metrics for all the players;
-                - `Teams`: team general statistics, map performance and rosters;
-                - `Players`: pilot's mech and tonnage preferences, stats and teams they played for;
-                - `Maps`: side winrates, spawn points usage, most picked mechs and tournaments where map have been played;
-                - `Mechs`: tournaments chassis or mech have been used in and their general performance.
-                """)
+    st.divider()
 
-    st.header("Filters")
-
-    st.write("Each page have filters that help you specify the data you search for.")
-    st.write("All filter select fields support multiple choices and are chained together")
-    st.write("E.g. if you select a tournament on Teams page, then only divisions and teams from that tournament could be selected in the following filters.")
-
-    st.image('img/Filters.png')
-
-    st.write('Some filters are required (like "Team" and "Player" on "Teams" and "Players" pages respectively), others are optional.')
-
-    st.header("Settings")
-
-    st.write('You may find Charts and Leaderboard settings there. They can help give you different sorting options or better presentation on lower display resolutions.')
+    markdown_document(page)
 
 df = read_comp_data()
 
 header()
 general_statistics(df)
+patch_notes_block()
 introduction()

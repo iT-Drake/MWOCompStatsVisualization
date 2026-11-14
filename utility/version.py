@@ -10,4 +10,4 @@
 # be on an older schema than the code that is running against it.
 #---------------------------------------------------------------------
 
-__version__ = '0.5.0'
+__version__ = '0.6.0'
