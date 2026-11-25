@@ -1,5 +1,6 @@
 import streamlit as st
 
+from utility.admission import GAMES_TIERS
 from utility.methods import filter_dataframe, unique
 
 def filters_block(df, options, multiselect=True, on_change=None, single=None):
@@ -38,6 +39,12 @@ def filters_block(df, options, multiselect=True, on_change=None, single=None):
         col_index += 1
 
     return df, options
+
+def games_tier_block(key, on_change=None):
+    """Career-games threshold."""
+    return st.selectbox('Minimum games', GAMES_TIERS, index=0, key=key,
+                        format_func=lambda count: f'{count}+ games',
+                        on_change=on_change, label_visibility='hidden')
 
 def change_color(value):
     """Green for a rating gain, red for a loss, nothing for no change."""

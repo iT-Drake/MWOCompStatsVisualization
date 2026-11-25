@@ -2,7 +2,7 @@ import streamlit as st
 
 from utility.admission import ACTIVE_DAYS, MIN_GAMES
 from utility.database import read_comp_data
-from utility.blocks import change_color, filters_block
+from utility.blocks import change_color, filters_block, games_tier_block
 from utility.documents import DOCS, expander_document
 from utility.globals import get_leaderboard_size
 from utility.ranking import ladder_data
@@ -12,6 +12,7 @@ from utility.ranking import ladder_data
 
 PAGE_KEY = 'ladder_page'
 FIND_KEY = 'ladder_pilot'
+GAMES_KEY = 'ladder_games'
 
 def reset_page():
     st.session_state[PAGE_KEY] = 0
@@ -20,9 +21,17 @@ def header():
     st.header('Ladder')
 
 def filters():
+    """Tournament and Division narrow the rows; games narrows the ladder itself."""
     df = read_comp_data()
     options = {'Tournament': None, 'Division': None}
-    return filters_block(df, options, on_change=reset_page)
+
+    scope, career = st.columns([2, 1])
+    with scope:
+        df, options = filters_block(df, options, on_change=reset_page)
+    with career:
+        minimum = games_tier_block(GAMES_KEY, on_change=reset_page)
+
+    return df, options, minimum
 
 def page_count(rows, page_size):
     # A full last page must not produce an empty page after it.
@@ -59,20 +68,28 @@ def ladder_page():
     ladder = ladder_data()
     page_size = get_leaderboard_size()
 
-    df, options = filters()
+    df, options, minimum = filters()
 
-    view = ladder
+    view = ladder[ladder['Games'] >= minimum]
     if any(options.values()):
         pilots = set(df['Username'])
-        view = ladder[ladder['Pilot'].isin(pilots)].reset_index(drop=True)
+        view = view[view['Pilot'].isin(pilots)]
+    view = view.reset_index(drop=True)
+
+    if view.empty:
+        st.info('No pilot matches the current filters.')
+        return
 
     last_page = page_count(view.shape[0], page_size)
     page_number = min(st.session_state.get(PAGE_KEY, 0), last_page)
 
+    if st.session_state.get(FIND_KEY) not in set(view['Pilot']):
+        st.session_state[FIND_KEY] = None
+
     column_find, column_controls = st.columns(2, vertical_alignment='center')
     with column_find:
-        selected = st.selectbox('Find pilot', ladder['Pilot'], index=None, key=FIND_KEY,
-                                placeholder='Find a player on the ladder',
+        selected = st.selectbox('Find pilot', view['Pilot'], index=None, key=FIND_KEY,
+                                placeholder=f'Find a player among the {len(view)} listed',
                                 label_visibility='collapsed')
 
     with column_controls:
