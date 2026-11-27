@@ -5,11 +5,12 @@ import streamlit as st
 from utility.caching import CACHE_TTL
 from utility.database import read_comp_data
 
-# Admission to the ladder and to the leaderboard: a pilot needs games behind the numbers and
-# has to still be playing. Both are measured on the whole database, never on the filters, so
-# the two pages list the same population.
+# Ladder and Stats leaderboard admission rule: more than 5 games, active in the past 2 years.
 MIN_GAMES = 5
 ACTIVE_DAYS = 730
+
+# Career games tiers a viewer can narrow a table to.
+GAMES_TIERS = [MIN_GAMES, 20, 50, 100, 200]
 
 @st.cache_data(ttl=CACHE_TTL)
 def eligible_pilots():

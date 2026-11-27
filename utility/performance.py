@@ -48,7 +48,7 @@ _LEVELS = {
     'Class':   ['Division', 'Class'],
 }
 _QUANTILES = [0.2, 0.5, 0.9]
-_SPREAD = 0.25
+_SPREAD = 0.1
 
 
 def _centred(values):
@@ -85,7 +85,7 @@ def team_weights(indices, alive, lam=1.0, survival=SURVIVAL):
 
 
 def metric_score(value, p20, p50, p90):
-    """Relative position of one stat inside its reference group, in 0.75 ... 1.25."""
+    """Relative position of one stat inside its reference group, in 0.9 ... 1.1."""
     if value >= p50:
         return 1.0 + min((value - p50) / (p90 - p50 + 1e-6), 1.0) * _SPREAD
     return 1.0 - min((p50 - value) / (p50 - p20 + 1e-6), 1.0) * _SPREAD

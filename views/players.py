@@ -5,6 +5,7 @@ import altair as alt
 from utility.admission import ACTIVE_DAYS, MIN_GAMES
 from utility.baselines import STATS, WEIGHT_CLASSES, class_percentiles
 from utility.database import read_comp_data
+from utility.divisions import pilot_divisions
 from utility.methods import nunique, safe_division
 from utility.blocks import change_color, filters_block, metrics_block, winner_label
 from utility.ranking import ladder_data, pilot_ratings
@@ -73,9 +74,10 @@ def identity_block(pilot):
         'Games': int(row['Games']),
         'Tournaments': int(row['Tournaments']),
         'Last played': row["Tournament"],
-        'Division': row["Division"],
+        'Last division': row["Division"],
+        'Div (avg.)': pilot_divisions().get(pilot, '--'),
     }
-    metrics_block(metrics, columns=6)
+    metrics_block(metrics, columns=7)
     
     if rank is None:
         st.caption(f'Not on the ladder: it takes at least {MIN_GAMES} games and a match in the '
@@ -321,11 +323,12 @@ def match_details(df, view, match_id):
                 st.caption('No rows for this side.')
                 continue
 
-            hp = side_rows['HealthPercentage'].mask(side_rows['HealthPercentage'] <= 0, 'DEAD')
+            health = side_rows['HealthPercentage'].map(
+                lambda value: 'DEAD' if value <= 0 else f'{value}')
             table = pd.DataFrame({
                 'Pilot': side_rows['Username'],
                 'Mech': side_rows['Mech'],
-                'HP': hp,
+                'HP': health,
                 'Kills': side_rows['Kills'],
                 'KMDDs': side_rows['KillsMostDamage'],
                 'CD': side_rows['ComponentsDestroyed'],

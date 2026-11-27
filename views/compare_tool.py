@@ -7,12 +7,16 @@ from utility.requests import jarls_pilot_stats
 from utility.methods import filter_dataframe, nunique, safe_division, unique
 from utility.database import read_comp_data
 from utility.blocks import metrics_block
+from utility.admission import MIN_GAMES
+from utility.divisions import SPECIAL_DIVISIONS, average_divisions, decode_division, division_letters
+from utility.globals import RATING_BASE
 
 COMP_DATA = read_comp_data()
-AVERAGE_GAMES = COMP_DATA.groupby('Username')['Username'].value_counts().mean()
 DIVISIONS = unique(COMP_DATA, 'Division').to_list()
 DIVISION_DECODING = {i + 1:DIVISIONS[i] for i in range(len(DIVISIONS))}
 DIVISION_ENCODING = {value:key for key, value in DIVISION_DECODING.items()}
+DIVISION_LETTERS = division_letters(COMP_DATA)
+DIVISION_HIGH = DIVISION_ENCODING[DIVISION_LETTERS[-1]]
 
 def back_button():
     if st.button('< Back'):
@@ -50,15 +54,16 @@ def display_stats(container, pilots, df):
         'Rank': [],
         'CompGames': [],
         'HighestDiv': [],
-        'HighestDivGames': [],
+        'LastDiv': [],
         'AverageDiv': [],
-        'Confidence': []
+        'Rating': [],
+        'SortCode': []
     }
     for pilot in pilots:
         pilot_stats = jarls_pilot_stats(pilot)
         
         pilot_data = pilots_data[pilots_data['Username'].str.lower() == pilot.lower()].copy()
-        division, confidence = calculate_pilot_division(pilot_data)
+        division = calculate_pilot_division(pilot_data)
         comp_games = nunique(pilot_data, 'MatchID')
         
         if pilot_stats:
@@ -70,31 +75,49 @@ def display_stats(container, pilots, df):
         team_data['CompGames'].append(comp_games)
 
         if comp_games:
-            highest_div = pilot_data['Division'].min()
-            team_data['HighestDiv'].append(highest_div)
+            ordered = pilot_data.sort_values('CompleteTime')
+            ladder_data = ordered[~ordered['Division'].isin(SPECIAL_DIVISIONS)]
+            if ladder_data.empty:
+                highest_div = ordered['Division'].iloc[0]
+                sort_code = DIVISION_HIGH + 1
+            else:
+                highest_div = min(ladder_data['Division'], key=lambda value: DIVISION_ENCODING[value])
+                sort_code = DIVISION_ENCODING[highest_div]
+            last_div = ordered['Division'].iloc[-1]
 
-            highest_div_games = nunique(filter_dataframe(pilot_data, 'Division', highest_div), 'MatchID')
-            team_data['HighestDivGames'].append(highest_div_games)
-
+            team_data['HighestDiv'].append(format_division(highest_div, pilot_data))
+            team_data['LastDiv'].append(format_division(last_div, pilot_data))
             team_data['AverageDiv'].append(division)
-            team_data['Confidence'].append(confidence)
+            team_data['SortCode'].append(sort_code)
+            team_data['Rating'].append(ordered['PilotRating'].iloc[-1])
         else:
             team_data['HighestDiv'].append('--')
-            team_data['HighestDivGames'].append(0)
-            team_data['AverageDiv'].append(0)
-            team_data['Confidence'].append(0)
+            team_data['LastDiv'].append('--')
+            team_data['AverageDiv'].append(np.nan)
+            team_data['SortCode'].append(DIVISION_HIGH + 1)
+            team_data['Rating'].append(np.nan)
 
-    team_data = pd.DataFrame.from_dict(team_data).sort_values(by=['HighestDiv','CompGames','Rank'], ascending=[True, False, True])
-    team_division = team_data[team_data['AverageDiv'] > 0]['AverageDiv'].mean()
-    team_confidence = team_data[team_data['Confidence'] > 0]['Confidence'].mean()
+    team_data = pd.DataFrame.from_dict(team_data).sort_values(by=['SortCode','CompGames','Rank'], ascending=[True, False, True])
 
-    team_data['AverageDiv'] = [decode_division(value) for value in team_data['AverageDiv']]
-    team_data['Confidence'] = round(100 * team_data['Confidence'], 1)
-    team_data.columns = ['Pilot', 'QP Rank', 'Games', 'Div (High)', 'Games (High)', 'Div (Avg)', 'Conf.']
+    measured = team_data['AverageDiv'].dropna()
+    team_division = measured.mean() if not measured.empty else np.nan
+
+    measurable = team_data['AverageDiv'].notna() & (team_data['CompGames'] >= MIN_GAMES)
+    team_confidence = float(measurable.mean())
+
+    team_rating = team_data['Rating'].mean()
+    if not np.isfinite(team_rating):
+        team_rating = RATING_BASE
+
+    team_data['AverageDiv'] = [decode_division(value, DIVISION_LETTERS) for value in team_data['AverageDiv']]
+    team_data = team_data.drop(columns=['SortCode'])
+    team_data.columns = ['Pilot', 'QP Rank', 'Games', 'Div (High)', 'Div (Last)', 'Div (Avg.)', 'Rating']
 
     df_height = 35 * (team_data.shape[0] + 1) + 3
-    container.dataframe(team_data, hide_index=True, width='stretch', height=df_height)
-    container.info(f'Division: {decode_division(team_division)} ({float(team_division):.2})\n\nConfidence: {team_confidence:.1%}')
+    container.dataframe(team_data.style.format({'Rating': '{:.1f}'}, na_rep=''), hide_index=True, width='stretch', height=df_height)
+    container.info(f'Confidence: {team_confidence:.0%} ({int(measurable.sum())} of {team_data.shape[0]} pilots measured)\n\n'
+                   f'Division: {format_average(team_division)}\n\n'
+                   f'Rating: {team_rating:.1f}')
 
     grouped_df = pilots_data.groupby('Division').agg({
         'MatchResult': [
@@ -132,33 +155,18 @@ def display_metrics(df):
     metrics_block(metrics)
 
 def calculate_pilot_division(df):
-    special_divisions = ['S', 'Swiss']
-    groupped_data = df[~df['Division'].isin(special_divisions)].groupby(['Tournament', 'Division'], sort=False).agg(
-        Games=('MatchID', 'count'),
-        Losses=('MatchResult', lambda x: (x == 'LOSS').sum())
-    ).reset_index()
+    """The shared average division, read for one pilot's rows."""
+    estimates = average_divisions(df, DIVISION_LETTERS)
+    return float(estimates.iloc[0]) if not estimates.empty else np.nan
 
-    total_games = groupped_data['Games'].sum()
-    groupped_data['Lossrate'] = groupped_data['Losses'] / groupped_data['Games']
-    groupped_data['Weight'] = groupped_data['Games'] / total_games
-    groupped_data['Division'] = [DIVISION_ENCODING[label] for label in groupped_data['Division']]
+def format_division(division, df):
+    """'A (25)' - the bracket and how many of the pilot's games he played in it."""
+    return f'{division} ({nunique(filter_dataframe(df, "Division", division), "MatchID")})'
 
-    groupped_data['AdjustedWeight'] = groupped_data['Weight'] * weights_range(0.8, 1.2, groupped_data.shape[0]) if groupped_data.shape[0] > 2 else groupped_data['Weight']
-    average_division = ((groupped_data['Division'] + 2 * (groupped_data['Lossrate'] - 0.5)) * groupped_data['AdjustedWeight']).sum()
-
-    confidence = min(1.0, float(total_games) / AVERAGE_GAMES)
-
-    return average_division, confidence
-
-def weights_range(start, stop, count):
-    return np.linspace(start, stop, num=count)
-
-def decode_division(division):
-    if division > 0:
-        estimated_div = int(round(division))
-        return DIVISION_DECODING[estimated_div] if estimated_div > 0 else "A+"
-    else:
-        return "--"
+def format_average(division):
+    if division is None or not np.isfinite(division):
+        return '--'
+    return f'{decode_division(division, DIVISION_LETTERS)} ({float(division):.2f})'
 
 header()
 display_inputs()

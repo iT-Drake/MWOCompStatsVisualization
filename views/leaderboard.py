@@ -1,15 +1,16 @@
 import streamlit as st
 
-from utility.admission import MIN_GAMES, ACTIVE_DAYS, eligible_pilots
+from utility.admission import eligible_pilots
 from utility.database import read_comp_data
-from utility.blocks import filters_block
+from utility.blocks import filters_block, games_tier_block
 from utility.methods import safe_division
 from utility.globals import get_leaderboard_size, get_leaderboard_default_sorting, get_leaderboard_aggregation_method
 from utility.enums import SortingOption, AggregationMethod
-from utility.ranking import current_ratings
+from utility.ranking import current_ratings, pilot_ratings
 
 SORT_KEY = 'leaderboard_sorting'
 PAGE_KEY = 'page_number'
+GAMES_KEY = 'leaderboard_games'
 
 def current_sorting():
     # Read before the control is drawn, so the control can sit anywhere on the page.
@@ -24,20 +25,28 @@ def reset_page():
 def header():
     st.header('Stats')
 
-def prepare_data():
+def prepare_data(minimum):
     """
     The frame every filter reads from: only pilots who qualify, counted on the whole
-    database. Cut here rather than after the stats so the Team and Player options cannot
-    offer a pilot the table would then drop.
+    database.
     """
     df = read_comp_data()
 
-    return df[df['Username'].isin(eligible_pilots())]
+    career = pilot_ratings()
+    enough = set(career.loc[career['Games'] >= minimum, 'Pilot'])
+
+    return df[df['Username'].isin(eligible_pilots() & enough)]
 
 def filters():
-    df = prepare_data()
     options = {'Tournament': None, 'Division': None, 'Class': 'Class', 'TeamName': 'Team', 'Username': 'Player'}
-    return filters_block(df, options, on_change=reset_page)
+
+    scope, career = st.columns([4, 1])
+    with career:
+        minimum = games_tier_block(GAMES_KEY, on_change=reset_page)
+    with scope:
+        df, options = filters_block(prepare_data(minimum), options, on_change=reset_page)
+
+    return df, options
 
 def get_sorting_settings(value):
     match value:
@@ -104,6 +113,10 @@ def leaderboard(df):
     pilot_stats = pilots_data(df, method)
     pilot_stats = pilot_stats.merge(current_ratings(), on='Pilot', how='left')
 
+    if pilot_stats.empty:
+        st.info('No pilot matches the current filters.')
+        return
+
     page_size = get_leaderboard_size()
     last_page = max((pilot_stats.shape[0] - 1) // page_size, 0)
     page_number = get_page_number(last_page)
@@ -124,7 +137,7 @@ def leaderboard(df):
                 - `DMG`: Damage Dealt (avg.)
                 - `TD`: Team Damage (avg.)
                 - `WLR`: Wins to Losses ratio
-                - `Games`: Total games played
+                - `Games`: Games played inside the current filters scope
                 - `Rating`: Current rating, whole database, filters do not change it
             ''')
 
