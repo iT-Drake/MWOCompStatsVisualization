@@ -12,6 +12,7 @@ import streamlit as st
 from utility.admission import eligible_pilots
 from utility.caching import CACHE_TTL
 from utility.database import read_comp_data
+from utility.divisions import pilot_divisions
 from utility.globals import RATING_BASE
 
 
@@ -53,8 +54,9 @@ def ladder_data():
     ladder = ladder[ladder['Pilot'].isin(eligible_pilots())]
     ladder = ladder.sort_values(['Rating', 'Pilot'], ascending=[False, True], ignore_index=True)
     ladder.insert(0, 'Rank', range(1, len(ladder) + 1))
+    ladder['Div (avg.)'] = ladder['Pilot'].map(pilot_divisions()).fillna('--')
 
-    return ladder[['Rank', 'Pilot', 'Games', 'Rating', 'Change', 'Tournament', 'Division']]
+    return ladder[['Rank', 'Pilot', 'Games', 'Rating', 'Change', 'Tournament', 'Division', 'Div (avg.)']]
 
 
 def current_ratings():

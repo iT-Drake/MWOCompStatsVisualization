@@ -55,12 +55,13 @@ def ladder_table(view, selected):
         hide_index=True,
         width='stretch',
         height=height,
-        column_order=['Rank', 'Pilot', 'Games', 'Rating', 'Change', 'Tournament', 'Division'],
+        column_order=['Rank', 'Pilot', 'Games', 'Rating', 'Change', 'Tournament', 'Division', 'Div (avg.)'],
         column_config={
             'Change': st.column_config.Column('Last change', help='Rating change over the most recent tournament'),
-            'Tournament': st.column_config.Column('Last tournament played'),
+            'Tournament': st.column_config.Column('Last tournament'),
             'Games': st.column_config.Column('Games', help='Total games played, whole database'),
-            'Division': st.column_config.Column('Division', help='Division of the most recent tournament'),
+            'Division': st.column_config.Column('Last division', help='Division of the most recent tournament'),
+            'Div (avg.)': st.column_config.Column('Div (avg.)', help='Average division across the whole career, ladder divisions only (S and Swiss excluded)'),
         },
     )
 
@@ -97,8 +98,6 @@ def ladder_page():
             [1, 1, 1, 1], vertical_alignment='center')
 
         with action_find:
-            # A button, not on_change: the same pilot can be looked up again after
-            # browsing away, and selecting the same value does not fire a callback.
             jump = st.button('Find', width='stretch')
 
         with action_previous:
